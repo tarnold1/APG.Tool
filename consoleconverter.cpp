@@ -19,8 +19,6 @@
 
 #include "globals.h"
 
-
-
 #define MAXPATTERN 100
 #define MAXPATINST 100
 #define MAXPATMICRO 100
@@ -130,15 +128,9 @@ void getFilesList(string filePath,string extension, vector<string> & returnFileN
     }
 }
 
-
-
- 
-
 bool GoSub(int pat_idx, int patinst_idx, string called_pat){
 
 	int new_idx = -1;
-	
-	
 
 	vector<string> *listVecLines = vvsPATTERNS.at(pat_idx).m_listPatInst->at(patinst_idx).m_listVecConverted;
 
