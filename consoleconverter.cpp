@@ -417,7 +417,6 @@ void ProcessInitBlock(string init){
     while (getline(ss, rd, '\n')) {
 		rd = trim(remove_comment(rd));
 
-
 		if( rd.size() > 1){
  
 			vector<string> v = Tokenize(rd,'(');
