@@ -1,0 +1,4 @@
+[psub_ent_progmode]
+[p_write_signature_dbm]
+jamreg = 10
+ymain = 100

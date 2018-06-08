@@ -1,0 +1,22 @@
+004CFEECkeyword
+004CFEECpat_name
+004CFEECpsub_ent_progmode,memory
+004CFEECkeyword  after \n 
+004CFEECpat_name
+004CFEEC p_write_signature_dbm,memory
+004CFEEC
+	numx(NUMX_FLASH+1);
+	numy(NUMY_FLASH);
+	xmain(FLASH_ROWS+1);
+	ymain(0);
+	count(2, FLASH_COLS);	// Page size
+	count(5, 40);			// Error pipe
+	count(43, DWORD(page_write_delay/(1 US)));  // Programming timeout
+	jamreg(WRSIGCMD);		// command: write signature
+	count(55, 20);      // 21 loop clear vec bit execution counter
+
+004CFEEC MAR DONE
+  pinfunc tset2,PS42
+  CHIPS	     CS4F, ADHIZ
+
+
