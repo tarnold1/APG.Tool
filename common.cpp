@@ -79,6 +79,7 @@ string remove_comment(string in){
 
 
 void Log(string lbl, string ln){
+	if (G_DEBUG_ON)
 	debugfile << lbl << " : " << ln << endl;
 	if(G_VERBOSE)
 		cout << lbl << " : " << ln << endl;
@@ -170,6 +171,7 @@ bool FindVecDefIndex(string pinname, int &idx){
 	map<string,int>::iterator iter = stdmapVECDEF.find( pinname );
 	if( iter != stdmapVECDEF.end() ){ // if found
 		idx = stdmapVECDEF[pinname];
+		if (G_DEBUG_ON)
 		debugfile << "FindVecDefIndex : "<< pinname << " = "<< idx <<endl;
 		return true;
 	}

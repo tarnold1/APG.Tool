@@ -845,17 +845,20 @@ bool UnScrambleResource(string res,vector<int> &idxs, string ps_map){
 	{
 		
 		string str_up = it->second;
-		// Insert macro check here. - TAZ 05/302018
+		// Insert macro check here. - TAZ 05/30/2018
 		if (FindDef(str_up)) {
+			if (G_DEBUG_ON)
 			debugfile << "macro for pin value! : " << it->second << " = " << str_up << endl;
 		}
 		ToUpper(str_up);
+		if (G_DEBUG_ON)
 		debugfile <<  res << " = " << it->second << " = " << it->first << endl;
 
 		if(res.compare(str_up) == 0){
 			if( FindVecDefIndex(it->first,idx) ){
 				ret = true;
 				idxs.push_back(idx);
+				if (G_DEBUG_ON)
 				debugfile <<"found in vecdef! : "<<  res << " = " << it->second << " = " << it->first << endl;
 				
 			}
@@ -896,7 +899,7 @@ void Initialize(){
 	if (directoryDebug.size() == 0) {
 		directoryDebug = "debug_files\\";
 	}
-
+	if (G_DEBUG_ON)
 	debugfile.open(directoryDebug+"debug.txt");
 	errlogfile.open (directoryDebug+"error_logs.txt");
 	warnlogfile.open (directoryDebug+"warning_logs.txt");
@@ -1212,12 +1215,13 @@ for (int a = 0; a < argc; a++) {
 				Custom_DebugOutput = true;
 				break;
 			case IDNO:
+				Custom_DebugOutput = false;
 				break;
 			}
 		}
-		Custom_DebugOutput = true;
+		//Custom_DebugOutput = true;
 		directoryDebug = directoryDebug + "\\";
-		cout << "Debug directory: " << argv[a + 1] << "\n";
+		//cout << "Debug directory: " << argv[a + 1] << "\n";
 	}
 }
 if (G_USAGE) {
@@ -1262,13 +1266,13 @@ if (!Custom_Output) {
 	directoryOut = directoryOut + "\\";
 }
 
-if (!Custom_DebugOutput) {
-	directoryDebug = "debug_files";
+if ((Custom_DebugOutput)) {
+	//directoryDebug = "debug_files";
 	if (!dirExists(directoryDebug)) {
 		lpMyString = directoryDebug.c_str();
 		CreateDirectory(lpMyString, NULL);
 	}
-	cout << "Debug directory: " << "debug_files" << "\n";
+	cout << "Debug directory: " << directoryDebug << "\n";
 	directoryDebug = directoryDebug + "\\";
 }
 
@@ -1315,7 +1319,7 @@ else{
 }
 
 //outfile.close();
-
+if (G_DEBUG_ON)
 debugfile.close();
 errlogfile.close();
 warnlogfile.close();

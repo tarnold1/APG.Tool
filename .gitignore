@@ -1,7 +1,13 @@
 APG_Tool.VC.VC.opendb
 Release/
 debug_files/
+APG_Tool.VC.db
 input_files/
 ipch/
 output_files/
 consoleconverter___Win32_Debug0/
+APG_Package.7z
+APG_Package/
+VerificationData.7z
+VerificationData/
+consoleconverter.vcxproj.user
