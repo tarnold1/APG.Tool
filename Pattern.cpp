@@ -48,6 +48,7 @@ Pattern::Pattern(){
 	m_NestLevel =  0;
 	m_SubVecDef ="";
 	type = "";
+	m_isCount = false;
 
 };
 Pattern::~Pattern(){};
@@ -642,9 +643,26 @@ for(size_t c = 0; c < params.size(); c++){
 			 update = true;
 			 inv = true;
 				   }break;
+	
 		case CMPLDR: { // Added for inverting datareg. - TAZ 05/04/2018
 				G_DATREG = InvertData(G_DATREG);
 				   }break;
+		case CNTDNDR: { // Added for datareg+1. - TAZ 06/08/2018
+			if (m_isCount) {
+				G_DATREG = G_COUNTERS[m_CounterSel] - 1;
+			}
+			else {
+				G_DATREG = G_DATREG - 1;
+			}
+					}break;
+		case CNTUPDR: { // Added for datareg-1. - TAZ 06/08/2018
+			if (m_isCount) {
+				G_DATREG = G_COUNTERS[m_CounterSel] + 1;
+			}
+			else {
+				G_DATREG = G_DATREG + 1;
+			}
+		}break;
 		case EQFDIS :  {}
 		case XYEQB :  {}
 		case YEQB :  {}
@@ -661,8 +679,12 @@ for(size_t c = 0; c < params.size(); c++){
 		case XYLEBXF :  {}
 		case XEQYPN :  {}
 		case XEQYBPN :  {}
-		case CNTDNYN :  {}
-		case CNTUPYN :  {}
+		case CNTDNYN :  { // Added for yindex-1. - TAZ 06/08/2018
+			G_YADDR = G_YADDR - 1;
+				}break;
+		case CNTUPYN :  { // Added for yindex+1. - TAZ 06/08/2018
+			G_YADDR = G_YADDR + 1;
+				}break;
 		case HOLDYN :  {}
 		case XORINV :  {}
 		case BCKFEN :  {}
@@ -981,6 +1003,7 @@ for(size_t c = 0; c < params.size(); c++)
 		int idx;
 		if( FindFromTable( COUNT_OP_1_table, params.at(c), idx) ){
 			// Added for reload counter fix. - TAZ 05/06/2018
+			m_isCount = true;
 			count_str_size = 5;
 			count_check = params.at(0);
 			ToUpper(count_check);
@@ -2114,7 +2137,7 @@ string s_vd = vd.substr(0, vd.find_first_of(" "));
 if (vd.find("VECDEF") == 0) {
 	vd = s_vd;
 	}
-
+m_isCount = false;
 for (size_t   j = 0; j < inst->v_mi->size(); j++){  // for each micro instruction
 
 	if( inst->v_mi->at(j).size() > 0){

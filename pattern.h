@@ -35,6 +35,7 @@ private:
 	int m_CounterSel;
 	map< string,vector<long> > m_CjmpzMap;
 	map< string, string> m_GlobalInitMap;
+	bool m_isCount;
 
 public:
 	string m_SubVecDef;
