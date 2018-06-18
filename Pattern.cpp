@@ -174,11 +174,9 @@ for (size_t  b = 0; b < m_listComments->size();  b++){
 		//if(idx!=-1)
 		//	cm = cm.substr(0,idx-1);
 		
+		// if (G_ADD_ORIG) // Option to remove comments if /no_orig_code argument used. - TAZ
 		m_listVecConv->push_back(cm);
-		
 	}
-
-
 }
 
 if (G_DEBUG_ON && m_isSubPat){

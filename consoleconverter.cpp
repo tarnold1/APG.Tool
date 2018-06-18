@@ -293,13 +293,35 @@ void addComment(string comment){
 		if(cm.length() > 0){
 
 			if(cm.find("//")!= -1){
-				if( cm.find("//") < cm.find_first_not_of(" /") )
-					vvsPATTERNS.back().m_listComments->push_back("// " + comment);
-				else
-					vvsPATTERNS.back().m_listComments->push_back("// " + comment);
+				if (cm.find("//") < cm.find_first_not_of(" /")) {
+					comment.pop_back();
+					vvsPATTERNS.back().m_listComments->push_back("" + comment);
+				}
+				else {
+					vvsPATTERNS.back().m_listComments->push_back("" + comment);
+				}
 			}
-			else
+			else {
+				if (comment.find('\n') != -1) { // Added to insert '//' at the begining of block comment line. - TAZ 06/11/2018
+					vector<char> v_comment;
+					for (size_t i = 0; i < comment.size(); i++) {
+						char comment_temp = comment[i];
+						v_comment.push_back(comment_temp);
+						if (comment_temp == '\n') {
+							v_comment.pop_back();
+							v_comment.push_back('//');
+							v_comment.push_back('//');
+						}
+					}
+					string comment_temp2;
+					for (int i = 0; i < v_comment.size(); i++) {
+						comment_temp2 = comment_temp2 + v_comment[i];
+					}
+					comment = comment_temp2;
+				 } // End of insert '//' 
+
 				vvsPATTERNS.back().m_listComments->push_back("// " + comment);
+			}
 		}	
 	}
 }
