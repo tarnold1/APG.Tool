@@ -2,12 +2,15 @@
 #include "parsepatternfile.h"
 #include <regex>
 #include <windows.h>
+#include "globals.h"
 
 extern ofstream debugfile;
 
 extern vector < Pattern > vvsPATTERNS; // vector of pattern instructions
 
 extern vector < string > vsEXECPATNAMES;
+
+extern map<string, string> labelParseDEF;
 
 extern void addPattern(string pname);
 extern bool checkPatternExist(string pname);
@@ -21,69 +24,242 @@ extern int G_MODE;
 string lastVecDef;
 string initVecDef = "";
 
-int ParseGosubLabel(string fname_in) {
+int ParseGosubLabel(string fname_in,vector<string>fileList) {
 
 	string gs;
-	vector <string >labelList;
-	vector <string >gosubLabel;
+	LPCSTR lpcMessage;
+	string message;
 
-	regex label_keywords("%+[[:s:]]*([[:w:]]+)[[:s:]]*:+");
-	regex gosub_keywords("(mar)+[[:s:]]*(gosub)+[[:s:]]*,+[[:s:]]*([[:w:]]+)[[:s:]]*,*[[:s:]]*([[:w:]]*)");
+	vector <string >jumpList;
+	vector <string >jumpLineList;
+	vector <string >gosubLabelFixed;
+	map<string, string> labelLocation;
+	vector <string >patList;
+	vector <string >gosubLabel;
+	vector <string >labelList;
+
+	regex marDoneReturn_keywords("^[[:s:]]*%*[[:s:]]*(mar|var)+[[:s:]]*(done|return)+", std::regex_constants::icase);
+	regex pinFunc_keywords("^[[:s:]]*(pinfunc)", std::regex_constants::icase);
+	regex label_keywords("^[[:s:]]*%+[[:s:]]*([[:w:]]+)[[:s:]]*:+");
+	regex gosub_keywords("^[[:s:]]*%*[[:s:]]*mar[[:s:]]+gosub[[:s:]]*,[[:s:]]*([[:w:]]+)[[:s:]]*", std::regex_constants::icase);
+	regex jump_keywords("^[[:s:]]*%*[[:s:]]*mar[[:s:]]+jump[[:s:]]*,[[:s:]]*([[:w:]]+)[[:s:]]*", std::regex_constants::icase);
+	regex pattern_keywords("^[[:s:]]*PATTERN.[[:s:]]*([[:w:]]+)", std::regex_constants::icase);
+	//regex gosub_keywords("(mar)+[[:s:]]*(gosub)+[[:s:]]*,+[[:s:]]*([[:w:]]+)[[:s:]]*,*[[:s:]]*([[:w:]]*)");
 
 	ifstream in2(fname_in.c_str(), ios::in | ios::binary);
 	int i = 0;
+	int lineCount = 0;
+	int marLineCount = 0;
+	bool foundGosub;
+	bool marDone;
+	bool foundLabel;
+	bool foundPinfunc;
+	bool foundJump;
+	bool foundPattern;
+	bool marDoneFound = false;
+	int mar_2_pinfunc_Count = 0;
+	string lastMarDone = "";
+	string stopLine;
+	string startLine;
+	string str;
+	string str2;
+	string fileExist;
+	int ret;
 	do {
 		getline(in2, gs);
 		smatch match;
+		smatch match2;
+		smatch match3;
+		smatch match4;
+		smatch match5;
+		smatch match6;
 		//cout << "Line : " << gs << endl;
 
-		bool found = regex_search(gs, match, label_keywords);
-		if (found) {
-			//std::cout << "Label Found: " << match[1].str() << "'\n";
-			labelList.push_back(match[1].str());
+		foundGosub = regex_search(gs, match2, gosub_keywords);
+		marDone = regex_search(gs, match3, marDoneReturn_keywords);
+		foundLabel = regex_search(gs, match, label_keywords);
+		foundJump = regex_search(gs, match5, jump_keywords);
+		foundPattern = regex_search(gs, match6, pattern_keywords);
+		foundPinfunc = regex_search(gs, match4, pinFunc_keywords);
+
+		bool countEnd = false;
+
+		//if ((foundPattern) && (LabelFirst)) {
+
+		mar_2_pinfunc_Count++;
+
+		if ((foundPinfunc) && (marDoneFound) && (mar_2_pinfunc_Count <= 4)){
+				stopLine = to_string(i);
+				mar_2_pinfunc_Count = 0;
+				marDoneFound = false;
+				for (map<string, string>::iterator iter = labelLocation.begin(); iter != labelLocation.end(); ++iter) {
+					str = iter->second;
+
+					if (str.find("."+lastMarDone) != -1) {
+						//std::cout << "mar done to change: " << lastMarDone <<   " from " << str << "to: " << stopLine <<" ############'\n";
+						size_t index = 0;
+							index = str.find(".");
+							str.replace(index+1,stopLine.length(), stopLine);
+							labelLocation[iter->first] = str;
+					}
+				}
+			}
+
+
+		if (marDone)  {
+			marDoneFound = true;
+			mar_2_pinfunc_Count = 0;			
+			stopLine = to_string(i);
+
+			for (map<string, string>::iterator iter = labelLocation.begin(); iter != labelLocation.end(); ++iter) {
+				str = iter->second;
+				if (str.find(".") == -1) {
+					labelLocation[iter->first] = str + "." + stopLine;
+					lastMarDone = stopLine;
+				}
+			}
 		}
-		//cout << "Line : " << gs << endl;
+
+		if (foundPattern) {
+
+			patList.push_back(match6[1].str());
+			//std::cout << "########### Label found: " << match[1].str() <<   " starting on line : " <<  startLine <<" ############'\n";
+		}
+
+		if (foundJump) {
+			jumpList.push_back(match5[1].str());
+			jumpLineList.push_back(gs);
+			//std::cout << "########### Label found: " << match[1].str() <<   " starting on line : " <<  startLine <<" ############'\n";
+		}
+
+		if (foundLabel) {
+			startLine = to_string(i);
+			//std::cout << "########### Label found: " << match[1].str() <<   " starting on line : " <<  startLine <<" ############'\n";
+			labelLocation[match[1].str()] = startLine;
+			//std::cout << "################### Label Found: " << match[1].str() << "#####################'\n";
+			labelList.push_back(match[1].str());
+			string labelName = match[1].str();
+			 startLine = lineCount;
+		}
+		if (foundGosub) {
+			//cout << "Found Gosub." << endl;
+			string myGroup = match2[1].str();
+			//std::cout << "Gosub Found: " << match2[1].str() << " in line " << gs << "'\n";
+			gosubLabel.push_back(match2[1].str());
+			//std::cout << "at line : " << lineCount << "'\n";
+		}
 		i++;
+		lineCount++;
 	} while (!in2.eof());
 	in2.close();
-	
-	ifstream in3(fname_in.c_str(), ios::in | ios::binary);
-	do {
-		getline(in3, gs);
-		smatch match;
-		//cout << "Line : " << gs << endl;
 
-		bool found = regex_search(gs, match, gosub_keywords);
-		if (found) {
-			//cout << "Found Gosub." << endl;
-
-			//std::cout << "Gosub Found: " << match[3].str() << "'\n";
-			gosubLabel.push_back(match[3].str());
-
-			/*for (size_t i = 0; i < match.size(); ++i) {
-			//std::cout << "Gosub Found: " << match[i].str() << "'\n";
-			std::cout << "Label Found: " << match[i].str() << "'\n";
-			}*/
-		}
-		//cout << "Line : " << gs << endl;
-	} while (!in3.eof());
-	in3.close();
-
-	string str;
-	for (vector<string>::iterator lb = labelList.begin(); lb != labelList.end(); ++lb) {
-		for (vector<string>::iterator gs = gosubLabel.begin(); gs != gosubLabel.end(); ++gs) {
-			str = *gs;
-			//cout << "For loop Gosub." << str << endl;
-			if (*gs == *lb) {
-			cout << "Found a Gosub to a Label:" << str << endl;
+	for (vector<string>::iterator jp = jumpList.begin(); jp != jumpList.end(); ++jp) {
+		for (vector<string>::iterator ptl = patList.begin(); ptl != patList.end(); ++ptl) {
+			str = *ptl;
+			if (*ptl == *jp) {
+				std::cout << "Found a jump to a gosub:" << str << " in file " << fname_in << endl;
+				for (vector<string>::iterator jps = jumpLineList.begin(); jps != jumpLineList.end(); ++jps) {
+					string temp = *jps;
+				}
 			}
 		}
 	}
 
+	for (vector<string>::iterator lb = labelList.begin(); lb != labelList.end(); ++lb) {
+		for (vector<string>::iterator gsl = gosubLabel.begin(); gsl != gosubLabel.end(); ++gsl) {
+			str = *gsl;
+			str2 = "input_files\\"+str + ".pat";
+			if (*gsl == *lb) {
+				// Check if new subroutine .pat file already exits.
+				if ((std::find(fileList.begin(), fileList.end(), str2) != fileList.end()) || 
+					(std::find(gosubLabelFixed.begin(), gosubLabelFixed.end(), str) != gosubLabelFixed.end()))
+				{
+					break;
+				}
+				string newGosubPat = str;
+				vector<string> strSE = Tokenize(labelLocation[str], '.');
+				int tts = stoi(strSE[0]);
 
+				int tte = stoi(strSE[1]);
+
+				message = "A Gosub to a Label was found!!\n\n[Yes] Auto Create Subrouine Pattern "+ newGosubPat+".pat.\n\n[No] Continue on with error and manually create pattern.";
+				lpcMessage = message.c_str();
+				int msgboxID = MessageBox(NULL, lpcMessage, "Error Encountered", MB_ICONERROR | MB_YESNO);
+				switch (msgboxID)
+				{
+				case IDYES:
+					ret = creatSubPattern(fname_in, newGosubPat, tts, tte);
+					gosubLabelFixed.push_back(newGosubPat);
+
+					break;
+				case IDNO:
+					MessageBox(NULL, "Continuing with Gosub to Label Error", "Error Encountered", MB_ICONWARNING | MB_OK);
+					break;
+				}
+				//std::cout << "Found a Gosub to a Label:" << str << " at Start.Stop location: " << labelLocation[str] << endl;
+				//std::cout << "Current pattern file:" << fname_in << " at Start.Stop location: " << labelLocation[str] << " New pattern:" << newGosubPat << endl;
+				//std::cout << "Current pattern file:" << fname_in << " at Start location: " << tts << " at Stop location: " << tte << " New pattern:" << newGosubPat << endl;
+			}
+		}
+	}
 	return 0;
 }
 
+int creatSubPattern( string patName,string newPatName, int startLine, int stopLine) {
+	string dirout = "input_files\\";
+	string dirin = "input_files\\";
+	ofstream outfile;
+	ofstream infile;
+	string fname = dirout;
+	string fnameNew = dirin;
+	fname += patName + ".pat";
+	fnameNew += newPatName;
+	vector<string> inputFile;
+	string gs;
+	int lineNum=0;
+
+	ifstream in3(patName.c_str(), ios::in | ios::binary);
+
+	if (!in3) {
+		LogError("ParsePatternFile", "Cannot open input file - patterns.pat.");
+		return -1;
+	}
+	inputFile.push_back("// *****************************************************************************");
+	inputFile.push_back("// Filename:	"+newPatName+".pat\n ");
+	inputFile.push_back("// *****************************************************************************");
+	inputFile.push_back("");
+	inputFile.push_back("#include \"defines_part.h\"");
+	inputFile.push_back("#include \"defines_family.h\"");
+	inputFile.push_back("#include \"defines_common.h\"");
+	inputFile.push_back("");
+	inputFile.push_back("PATTERN( "+ newPatName +" )");
+	inputFile.push_back("// *****************************************************************************");
+	inputFile.push_back("// *****************************************************************************");
+
+	do {
+		getline(in3, gs);
+		if ((lineNum >= startLine) && (lineNum <= stopLine)){
+			gs.erase(std::remove(gs.begin(), gs.end(), '\r'), gs.end());
+			inputFile.push_back(gs);
+		}
+		lineNum++;
+	} while (!in3.eof());
+
+	outfile.open(dirin + newPatName+".pat");
+	for (vector<string>::iterator iter = inputFile.begin(); iter != inputFile.end(); ++iter) {
+		outfile << *iter << endl;
+	}
+	outfile.close();
+
+
+	//infile.open(fname.c_str());
+
+	//infile.close();
+
+	//outfile.open(fname.c_str());
+
+	return 0;
+}
 
 int ParsePatternFile(string dirdebug,string fname_in) {
 	if (dirdebug.size() == 0) {

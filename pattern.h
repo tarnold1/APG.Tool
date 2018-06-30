@@ -36,6 +36,7 @@ private:
 	map< string,vector<long> > m_CjmpzMap;
 	map< string, string> m_GlobalInitMap;
 	bool m_isCount;
+	string m_currentPat;
 
 public:
 	string m_SubVecDef;

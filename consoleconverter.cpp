@@ -82,6 +82,9 @@ G_CS_ACTIVE_H[8] = {false, false, false, false, false, false, false, false};
 
 map<string,string> stdmapDEFINE;
 
+map<string, int[2]> labelParseDEF;
+
+
 int G_MODE = MODE1;
 
 int G_ADHIZ = DRIVE;
@@ -304,17 +307,18 @@ void addComment(string comment){
 			else {
 				if (comment.find('\n') != -1) { // Added to insert '//' at the begining of block comment line. - TAZ 06/11/2018
 					vector<char> v_comment;
+					char comment_str = '//';
 					for (size_t i = 0; i < comment.size(); i++) {
 						char comment_temp = comment[i];
 						v_comment.push_back(comment_temp);
 						if (comment_temp == '\n') {
 							v_comment.pop_back();
-							v_comment.push_back('//');
-							v_comment.push_back('//');
+							v_comment.push_back(comment_str);
+							v_comment.push_back(comment_str);
 						}
 					}
 					string comment_temp2;
-					for (int i = 0; i < v_comment.size(); i++) {
+					for (size_t i = 0; i < v_comment.size(); i++) {
 						comment_temp2 = comment_temp2 + v_comment[i];
 					}
 					comment = comment_temp2;
@@ -770,26 +774,35 @@ int ParsePatternFiles(string directory){
 		directoryOut = "output_files\\";
 	}
 
-vector<string> filesPaths;
+vector<string> filesPaths_pre;
 string optfileName ="";        
 //string inputFolderPath =inputFileName + "\\"; 
 string inputFolderPath = directory;
 string extension = "*.pat";
-getFilesList(inputFolderPath,extension,filesPaths);
-vector<string>::const_iterator it = filesPaths.begin();
-while( it != filesPaths.end())
+
+//Check for Gosub to Label, Jump to Label. - TAZ 06/30/2018
+getFilesList(inputFolderPath,extension,filesPaths_pre);
+vector<string>::const_iterator it = filesPaths_pre.begin();
+while( it != filesPaths_pre.end())
 {
-	int ret2 = ParseGosubLabel(*it);
-	int ret = ParsePatternFile(directoryDebug,*it);
-	if(ret == -1)
-		return ret;
-//    frame = imread(*it);//read file names
-        //doyourwork here ( frame );
-  //  sprintf(buf, "%s/Out/%d.jpg", optfileName.c_str(),it->c_str());
-    //imwrite(buf,frame);   
+	int ret2 = ParseGosubLabel(*it, filesPaths_pre);
     it++;
 }
 
+vector<string> filesPaths;
+getFilesList(inputFolderPath, extension, filesPaths);
+vector<string>::const_iterator it2 = filesPaths.begin();
+while (it2 != filesPaths.end())
+{
+	int ret = ParsePatternFile(directoryDebug, *it2);
+	if (ret == -1)
+		return ret;
+	//    frame = imread(*it);//read file names
+	//doyourwork here ( frame );
+	//  sprintf(buf, "%s/Out/%d.jpg", optfileName.c_str(),it->c_str());
+	//imwrite(buf,frame);   
+	it2++;
+}
 
 return 0;
 }
@@ -911,7 +924,7 @@ void NestLoopCheck(string temp, string patName) {
 	if (Nested_Loop > 1) {
 		Loop_Violation = true;
 		Nested_Loop = 0; // reset nested loop counter
-		Loop_Pattern_List = Loop_Pattern_List + patName + ", ";
+		Loop_Pattern_List = Loop_Pattern_List +"\n" +patName;
 		//cout << "Encountered a nested loop violation " << Nested_Loop << " for pattern: " << pattern.name << "."<< endl;
 	}
 }
@@ -1350,8 +1363,8 @@ if (directoryDebug.size() == 0) {
 }
 if (Loop_Violation) { // Added for Nested Loop Violation. - TAZ 06/07/2018
 	string temp_str = Loop_Pattern_List;
-	temp_str.erase(temp_str.size() - 2);
-	message = "Encountered a nested loop violation\nfor pattern(s): "+ temp_str +".";
+	temp_str.erase(temp_str.size());
+	message = "Encountered a nested loop violation for pattern(s): "+ temp_str +".";
 	lpcMessage = message.c_str();
 	int msgboxID = MessageBox(NULL, lpcMessage, "", MB_ICONWARNING | MB_OK);
 	cout << "Encountered a nested loop violation " << Nested_Loop << " for pattern(s): " << temp_str << "."<< endl;

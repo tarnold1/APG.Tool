@@ -46,6 +46,7 @@ extern map<string,int> stdmapVECDEF;
 
 extern map<int,char> stdmapDEFCHAR;
 
+
 //typedef pair<int,char> def_char_pair;
 //vector<def_char_pair> vpairDEFCHAR;
 
@@ -72,5 +73,7 @@ extern bool G_VERBOSE;
 extern string G_VECDEF;
 
 extern int G_WARN_CNT;
+
+
 //#define _debug_on_
 

@@ -49,7 +49,7 @@ Pattern::Pattern(){
 	m_SubVecDef ="";
 	type = "";
 	m_isCount = false;
-
+	m_currentPat = "";
 };
 Pattern::~Pattern(){};
 
