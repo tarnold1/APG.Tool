@@ -33,6 +33,10 @@ extern unsigned long G_NUMY;
 
 extern int G_ADHIZ;
 
+extern string  currentPattern;
+extern map<string,string>  jump2gosub;
+extern map<string, string> jumpPatternMap;
+extern map<string, map <string, string>> pat_JumpLabel;
 
 
 extern bool G_CS_ACTIVE_H[8];
@@ -73,6 +77,8 @@ extern bool G_VERBOSE;
 extern string G_VECDEF;
 
 extern int G_WARN_CNT;
+
+extern string directory;
 
 
 //#define _debug_on_

@@ -5,6 +5,8 @@
 #include "stdafx.h"
 #include "Pattern.h"
 #include  <bitset>
+#include <windows.h>
+
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
@@ -26,6 +28,7 @@
 #undef ENUM_BEGIN
 #undef ENUM
 #undef ENUM_END
+
 
 Pattern::Pattern(){
 
@@ -1217,7 +1220,9 @@ for(size_t c = 0; c < params.size(); c++)
 					Log(param, toString(G_UDATA));
 				}
 				else{
+					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 					LogError("f_Udata","Failed to convert " + param + " to long.");
+					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 					if(G_HALT_E)
 						_getch();
 				}
@@ -1229,7 +1234,9 @@ for(size_t c = 0; c < params.size(); c++)
 					Log(param, toString(val));
 				}
 				else{
+					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 					LogError("f_Udata","Failed to convert " + param + " to long.");
+					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 					if(G_HALT_E)
 						_getch();
 				}
@@ -1556,6 +1563,7 @@ ToUpper(s_apg_inst);
 int retval;
 
 if( !FindFromTable(APG_INST_table, s_apg_inst, retval)){
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 	LogError("ExecuteMicroInst", s_apg_inst + "not found");
 	return -1;
 }
@@ -1610,6 +1618,7 @@ ToUpper(s_apg_inst);
 int retval;
 
 if( !FindFromTable(APG_INST_table, s_apg_inst, retval)){
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 	LogError("ExecuteMicroInst", s_apg_inst + "not found");
 	return -1;
 }
@@ -1782,6 +1791,48 @@ for (size_t  i = 0; i < inst.m_listMicroInst->size() ; i++){
 	}
 
 return 0;
+}
+
+int Pattern::JumpToGosubFix(PatInst &inst) {
+
+	int j = 0;
+	map <string, string> tempMap;
+	map <string, map <string, string>> tempMap2;
+	map <string, string> tempMap3;
+
+	tempMap = jump2gosub;
+	int pos;
+	int pos2;
+	string name = currentPattern;
+	regex JumpGosub_keywords("^[[:s:]]*%*mar[[:s:]]*jump[[:s:]]*,[[:s:]]*([[:w:]]+)", std::regex_constants::icase);
+	smatch match9;
+
+	for (size_t j = 0; j < inst.m_listMicroInst->size(); j++) {  // for each micro instruction
+
+		string mi = inst.m_listMicroInst->at(j);
+		pos = mi.find("jump,");
+		if (pos != -1) { // no spaces, try if its a #define
+			bool foundJump = regex_search(mi, match9, JumpGosub_keywords);
+			string tempMatch = match9[1];
+
+			for (map<string, map <string, string>>::iterator iter = pat_JumpLabel.begin(); iter != pat_JumpLabel.end(); ++iter) {
+					//cout << iter->first << " = " ;
+					tempMap3 = iter->second;
+
+					for (map<string, string>::iterator iter2 = tempMap3.begin(); iter2 != tempMap3.end(); ++iter2) {
+						pos2 = tempMatch.find(iter2->first);
+						if (pos2 != -1) {
+							SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2);
+							cout  << "  Changing jump to gosub for pattern " << iter->first  << " and label " << iter2->first << endl;
+							SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+							mi.replace(pos, 4, "gosub");
+							inst.m_listMicroInst->at(j).assign(mi);
+					}
+				}
+			}
+		}
+	}
+	return 0;
 }
 
 int Pattern::CheckFutureJump2(int cur_idx,vector<string> &params){
@@ -2297,7 +2348,9 @@ bool SetIntReg(unsigned int &tgt_reg, string &reg_name, string &str_val){
 				return true;
 			}
 			else{
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 				LogError("LoadPatInits - load " + reg_name,"failed to convert " + str_val +" to long.");
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 				if(G_HALT_E)
 					_getch();
 				return false;
@@ -2316,7 +2369,9 @@ bool SetReg(unsigned long &tgt_reg, string &reg_name, string &str_val){
 				return true;
 			}
 			else{
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 				LogError("LoadPatInits - load " + reg_name,"failed to convert " + str_val +" to long.");
+				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 				if(G_HALT_E)
 					_getch();
 				return false;
@@ -2399,13 +2454,17 @@ if( iter == stdmapPATINITS.end() ){ // if found
 							m_GlobalInitMap[reg] = str_val;
 					}
 					else{
+						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 						LogError("LoadPatInits - load counter","failed to convert " + trim(pair.at(1)) +" to long.");
+						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 						if(G_HALT_E)
 							_getch();
 					}
 				}
 				else{
+					    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 						LogError("LoadPatInits", "Invalid counter number : " + toString(ctr));
+						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 						if(G_HALT_E)
 							_getch();
 				}
@@ -2511,14 +2570,18 @@ if( iter == stdmapPATINITS.end() ){ // if found
 					//	_getch();
 					}
 					else{
+						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 						LogError("LoadPatInits", "Invalid t_cs number : " + toString(cs_num));
+						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 						if(G_HALT_E)
 							_getch();
 					}
 
 				}
 				else{
+					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 					LogError("LoadPatInits", "Invalid tester function : " + t_cs);
+					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 					if(G_HALT_E)
 						_getch();
 				}
@@ -2526,7 +2589,9 @@ if( iter == stdmapPATINITS.end() ){ // if found
 		}
 		else
 		{
+		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		 LogError("LoadPatInits", reg + " - unknown register or function.");
+		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 		 if(G_HALT_E)
 			_getch();
 		}
@@ -2552,11 +2617,10 @@ int i = 0;
 
 if((getSubVecDef().length() >  0) && !m_isSubVecDefDefined)
 	UndefineSubVecDef(this->getSubVecDef());
-
 for (  vector<PatInst>::iterator it_pat = m_listPatInst->begin(); it_pat != m_listPatInst->end(); ++it_pat,++i){
 	
-	
 	UndefinePatInst(*it_pat);	
+	JumpToGosubFix(*it_pat); 
 }
 
 string filename(dirout + getName());

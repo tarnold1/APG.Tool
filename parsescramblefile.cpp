@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "parsescramblefile.h" 
 #include "globals.h"
+#include <windows.h>
 
 extern void addPinScramble(string name);
 extern void addScrambleMap(string name);
@@ -32,7 +33,10 @@ int ParseScrambleFile(string dirname,string fname){
 	ifstream in( fname.c_str() , ios::in | ios::binary);
 
 	  if(!in) {
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		LogError("ParseScrmableFile", "Cannot open input file - pin_scramble.cpp."); 
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		_getch();
 		return 0;
 	  }
 

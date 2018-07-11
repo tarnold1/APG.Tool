@@ -121,6 +121,7 @@ string UndefineMicroInst(string mi);
 int UndefineSubVecDef(string &vecdef);
 
 int UndefinePatInst(PatInst &inst);
+int JumpToGosubFix(PatInst &inst);
 
 int CheckFutureJump2(int cur_idx,vector<string> &params);
 int CheckFutureJump(int cur_idx);

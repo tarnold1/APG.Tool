@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "parsedefinefile.h" 
+#include <windows.h>
 
 extern void addDefinition(string def_str,string fname);
 extern bool FindDef(string &str); 
@@ -34,7 +35,10 @@ int ParseDefineFile(string dirout,string filename){
 	ifstream in(filename.c_str(), ios::in | ios::binary);
 
 	  if(!in) {
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		LogError("ParseDefineFile", "Cannot open input file - " + filename);
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		_getch();
 		return 0;
 	  }
 

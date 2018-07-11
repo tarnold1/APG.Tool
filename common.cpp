@@ -5,6 +5,7 @@
 
 #include "globals.h"
 
+#include <windows.h>
 
 
 
@@ -236,3 +237,14 @@ PinScramble::PinScramble(){
 	m_vScrambleMap = new vector<ScrambleMap>;}
 PinScramble::~PinScramble(){}
 
+int currentCurPos() {
+	int cursorx;
+	int cursory;
+	CONSOLE_SCREEN_BUFFER_INFO consoleinfo;
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &consoleinfo);
+	cursorx = consoleinfo.dwCursorPosition.X;
+	cursory = consoleinfo.dwCursorPosition.Y;
+
+	//cout << endl << "Current X position:" << cursorx << " Current Y position:" << cursory;
+	return cursorx, cursory;
+}

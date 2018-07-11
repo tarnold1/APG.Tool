@@ -3,6 +3,7 @@
 #include <regex>
 #include <windows.h>
 #include "globals.h"
+#include <chrono>
 
 extern ofstream debugfile;
 
@@ -11,18 +12,25 @@ extern vector < Pattern > vvsPATTERNS; // vector of pattern instructions
 extern vector < string > vsEXECPATNAMES;
 
 extern map<string, string> labelParseDEF;
+extern map<string, string> jump2gosub;
+extern map<string, map <string, string>> pat_JumpLabel;
+extern map<string, string> jumpPatternMap;
 
 extern void addPattern(string pname);
 extern bool checkPatternExist(string pname);
 extern void addSubVecDef(string vecdef);
 extern void addPatInstVecDef(string vecdef);
 extern void addPatInst(string patinst,string vecdef);
+void setCursorPosition(unsigned int x, int y);
 extern void ParseIncludeFile(string fname);
 extern void ProcessInitBlock(string init);
 extern void addComment(string comment);
 extern int G_MODE;
 string lastVecDef;
 string initVecDef = "";
+vector <string >jumpList;
+vector <string >jumpLineList;
+extern string directory;
 
 int ParseGosubLabel(string fname_in,vector<string>fileList) {
 
@@ -30,8 +38,6 @@ int ParseGosubLabel(string fname_in,vector<string>fileList) {
 	LPCSTR lpcMessage;
 	string message;
 
-	vector <string >jumpList;
-	vector <string >jumpLineList;
 	vector <string >gosubLabelFixed;
 	map<string, string> labelLocation;
 	vector <string >patList;
@@ -122,13 +128,16 @@ int ParseGosubLabel(string fname_in,vector<string>fileList) {
 
 		if (foundPattern) {
 
-			patList.push_back(match6[1].str());
+			patList.push_back(match6[1].str());				
+			currentPattern = match6[1].str();
+
 			//std::cout << "########### Label found: " << match[1].str() <<   " starting on line : " <<  startLine <<" ############'\n";
 		}
 
 		if (foundJump) {
 			jumpList.push_back(match5[1].str());
 			jumpLineList.push_back(gs);
+			jumpPatternMap[match5[1].str()] = currentPattern;
 			//std::cout << "########### Label found: " << match[1].str() <<   " starting on line : " <<  startLine <<" ############'\n";
 		}
 
@@ -153,14 +162,46 @@ int ParseGosubLabel(string fname_in,vector<string>fileList) {
 	} while (!in2.eof());
 	in2.close();
 
+	regex Pattern_keywords("^[[:s:]]*input_files\\\\([[:w:]]+).pat", std::regex_constants::icase);
+	regex JumpGosub_keywords("^[[:s:]]*%*mar[[:s:]]*jump[[:s:]]*,[[:s:]]*([[:w:]]+)", std::regex_constants::icase);
+
+	smatch match7;
+	smatch match8;
+	//bool patName;
+	//bool jumpGosub;
+	string keydata;
+	string valuedata;
+	map <string, string> tempMap;
+
 	for (vector<string>::iterator jp = jumpList.begin(); jp != jumpList.end(); ++jp) {
 		for (vector<string>::iterator ptl = patList.begin(); ptl != patList.end(); ++ptl) {
 			str = *ptl;
+
 			if (*ptl == *jp) {
-				std::cout << "Found a jump to a gosub:" << str << " in file " << fname_in << endl;
-				for (vector<string>::iterator jps = jumpLineList.begin(); jps != jumpLineList.end(); ++jps) {
-					string temp = *jps;
+				// std::cout << "Found a jump to a gosub:" << str << " in file " << fname_in << endl; // Debug
+				message = "A Jump to a Subroutine was found!!\n\n[Yes] Change the ""jump"" micro instruction to ""gosub"" for " + str + "in pattern: " + fname_in + "?\n\n[No] Continue on with error and manually modify the pattern.";
+				lpcMessage = message.c_str();
+				int msgboxID = MessageBox(NULL, lpcMessage, "Error Encountered", MB_ICONERROR | MB_YESNO);
+				switch (msgboxID)
+				{
+				case IDYES:
+					goto jumpProcess;
+					break;
+				case IDNO:
+					MessageBox(NULL, "Continuing with Jump to a Subroutine Error", "Error Encountered", MB_ICONWARNING | MB_OK);
+					continue;
+					break;
 				}
+			    jumpProcess:
+					jump2gosub[str] = jumpPatternMap[str];
+					for (map<string,string>::iterator lb1 = jump2gosub.begin(); lb1 != jump2gosub.end(); lb1++) {
+						keydata = lb1->first;
+						valuedata = lb1->second;
+						if (str.find(keydata) != -1) {
+							tempMap[keydata] = valuedata;
+							pat_JumpLabel[lb1->second] = tempMap;
+						}
+					}
 			}
 		}
 	}
@@ -206,8 +247,8 @@ int ParseGosubLabel(string fname_in,vector<string>fileList) {
 }
 
 int creatSubPattern( string patName,string newPatName, int startLine, int stopLine) {
-	string dirout = "input_files\\";
-	string dirin = "input_files\\";
+	string dirout =  directory;
+	string dirin = directory;
 	ofstream outfile;
 	ofstream infile;
 	string fname = dirout;
@@ -221,11 +262,24 @@ int creatSubPattern( string patName,string newPatName, int startLine, int stopLi
 	ifstream in3(patName.c_str(), ios::in | ios::binary);
 
 	if (!in3) {
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		LogError("ParsePatternFile", "Cannot open input file - patterns.pat.");
 		return -1;
 	}
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer[80];
+
+	time(&rawtime);
+#pragma warning (disable : 4996)
+	timeinfo = localtime(&rawtime);
+
+	strftime(buffer, 80, " %A %B %d at %r.", timeinfo);
+	//strftime(buffer, 80, " %c.", timeinfo);
+
 	inputFile.push_back("// *****************************************************************************");
-	inputFile.push_back("// Filename:	"+newPatName+".pat\n ");
+	inputFile.push_back("// Filename:	" + newPatName + ".pat");
+	inputFile.push_back("// Pattern Auto Generated by APG Tool on" + string(buffer));
 	inputFile.push_back("// *****************************************************************************");
 	inputFile.push_back("");
 	inputFile.push_back("#include \"defines_part.h\"");
@@ -298,6 +352,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
   ifstream in (fname_in.c_str(), ios:: in | ios::binary);
 
   if (! in ) {
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
     LogError("ParsePatternFile", "Cannot open input file - patterns.pat.");
     return -1;
   }
@@ -345,6 +400,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
           mode = incl;
           Log("ParsePatternFile4", "incl");
         } else {
+		  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
           LogError("ParsePatternFile :" + fname_in, pk + " error in parsing: expecting an \"include\" keyword");
           _getch();
           return -1;
@@ -364,6 +420,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
         if (pk == '{') { 
 		in.get(); //discard '{'
         } else {
+		  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
           LogError("ParsePatternFile", "error in parsing: expecting an '{'");
           return -1;
         }
@@ -377,6 +434,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
 		  buf2=" // ";
           mode = comment;
         } else {
+		  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
           LogError("ParsePatternFile", "error in parsing: expecting a '/' - if this line is a comment");
           return -1;
         }
@@ -538,6 +596,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
             buf = "";
             mode = none;
           } else {
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
             LogError("ParsePatternFile", "error in parsing: expecting an '}'. at context: init");
             return -1;
           }

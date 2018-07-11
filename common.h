@@ -41,6 +41,8 @@ void InsertStartLoopTag(int patinst_idx, int counter_val);
 bool UnScrambleResource(string res,vector<int> &idxs, string ps_map);
 bool GoSub(int pat_idx, int patinst_idx, string called_pat);
 void SetBitDefaults(string &vec_line);
+int currentCurPos();
+
 string remove_ch( std::string& str, char ch);
 template<typename T>
 string toString(const T& value)

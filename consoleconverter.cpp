@@ -9,7 +9,6 @@
 #include "common.h"
 #include <regex>
 
-
 #include "parsescramblefile.h"
 #include "parsepatternfile.h"
 #include "parsedefinefile.h"
@@ -110,12 +109,44 @@ vector<Pattern> vvsPATTERNS; // vector of pattern instructions
 
 vector<string> vsEXECPATNAMES;
 
+string currentPattern;
+map<string, string> jump2gosub;
+map<string, string> jumpPatternMap;
+map<string,map <string, string>> pat_JumpLabel;
+
 ofstream debugfile;
 ofstream warnlogfile;
 ofstream errlogfile;
 
 //string inputFileName = G_INPUT_FILE;
 
+/***********************- POSITIONNING THE CONSOLE WINDOW -*******************************/
+
+//Finding the user's screen resolution
+int Width = GetSystemMetrics(SM_CXSCREEN);
+int Height = GetSystemMetrics(SM_CYSCREEN);
+
+//Assigning variables for MoveWindows parameters
+int WindowWidth = 800;		//--- Used as a parameter to specify the width of the console window (MoveWindows int nWidth)
+int WindowHeight = 1000;		//--- Used as a parameter to specify the height of the console window (MoveWindows int nHeight)
+int NewWidth = (Width - WindowWidth) / 2;		//--- Used as a parameter to center the console window horizontally (MoveWindows int x)
+int NewHeight = ((Height - WindowHeight) / 2);		//--- Used as a parameter to center the console window vertically (MoveWindows int y)
+
+													//Getting the console window handle
+HWND hWnd = GetConsoleWindow();
+
+//Declaring the function
+#pragma warning( disable : 4273 )
+
+BOOL WINAPI MoveWindow(_In_ HWND hWnd, _In_ int NewWidth, _In_ int NewHeight, _In_ int WindowWidth, _In_ int WindowHeight, _In_ BOOL bRepaint);
+
+bool HEADER_GRAPHIC = true; // Header graphic box control (on/off)
+bool MAX_WINDOW = true; // Resize console window (on/off)
+
+int XPosLast;
+int YPosLast;
+string RemoveChar(string string_in, string remove_char);
+string filterMicroInst(string type, string uInst);
 
 void getFilesList(string filePath,string extension, vector<string> & returnFileName)
 {
@@ -144,7 +175,9 @@ bool GoSub(int pat_idx, int patinst_idx, string called_pat){
 		}
 	}
 	if(new_idx == -1){
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		LogError("GoSub",": subroutine " + called_pat + " not found." );
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 		_getch();
 		return false;
 		}
@@ -307,6 +340,8 @@ void addComment(string comment){
 			else {
 				if (comment.find('\n') != -1) { // Added to insert '//' at the begining of block comment line. - TAZ 06/11/2018
 					vector<char> v_comment;
+#pragma warning( disable : 4309 )
+#pragma warning( disable : 4305 )
 					char comment_str = '//';
 					for (size_t i = 0; i < comment.size(); i++) {
 						char comment_temp = comment[i];
@@ -385,11 +420,15 @@ void addPatInst(string patinst,string vecdef){
 	int index;
 	vector<string> lines;
 	inst->setVecDef(vecdef);
+
 	while (getline(ss, rd, '\n')) {
 		rd = ltrim(rtrim(remove_comment(rd)));
 		#ifdef dbg_microinst
 			cout <<"rd : "<< rd << endl;	
 		#endif
+	    // Place Vec multi site filter here. Filter case example: "% VEC (1:1x011)". - TAZ 07/11/2018
+			rd = filterMicroInst("VEC_Multi_SITE",rd);
+
 		if( rd.size() > 1)
 			lines.push_back(rd);
     }
@@ -600,7 +639,10 @@ void ParseConfigs(string directory){
 //		  inputFileName = "input_files";
 
 		  if (!in) {
+			  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 			  LogError("ParseConfigs", "Cannot open input file - config.txt.");
+			  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+			  _getch();
 			  return;
 //		  }
 	  }
@@ -622,7 +664,9 @@ vector<string> pair = Tokenize(strd,'=');
 		string key = trim(pair.at(0));
 
 		if(pair.size() < 2){
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 			LogError("ParseConfigs : ", key + " not set.");
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 			if(G_HALT_E)
 				_getch();
 			continue;
@@ -662,13 +706,18 @@ vector<string> pair = Tokenize(strd,'=');
 
 					}
 					else
+						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 						LogError("ParseConfigs", "Invalid t_cs number : " + toString(cs_num));
+						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+
 						if(G_HALT_E)
 							_getch();
 
 				}
 				else{
+					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 					LogError("ParseConfigs", "Invalid tester function : " + t_cs);
+					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 					if(G_HALT_E)
 						_getch();
 				}
@@ -676,7 +725,9 @@ vector<string> pair = Tokenize(strd,'=');
 		}
 		else
 		{
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		 LogError("ParseConfigs", "Unknown variable : " + key);
+		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 		 if(G_HALT_E)
 			_getch();;
 		}
@@ -698,7 +749,10 @@ void ParsePatInits(string directory){
 	ifstream in(directory+"per_pat_inits.txt", ios::in | ios::binary);
 
 	  if(!in) {
+		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		LogError("ParsePatInits", "Cannot open input file - per_pat_inits.txt.");
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		_getch();
 		return;
 	  }
 	 
@@ -747,6 +801,63 @@ void ParsePatInits(string directory){
 	
 }
 
+void TitleBox(string type) {
+	unsigned  char d = 187;
+	unsigned char e = 188;
+	unsigned char f = 200;
+	unsigned char g = 201;
+	unsigned char h = 205;
+	unsigned char i = 186;
+	unsigned char j = 204;
+	unsigned char k = 185;
+	int width = 80;
+	int length = 1;
+
+	cout << " ";
+	if (type == "TOP") {
+		cout << g;
+		for (int ii = 0; ii <= width; ii++)
+			cout << h;
+		cout << d << "\n";
+	}
+
+	if (type == "DIVIDER") {
+		cout << j;
+		for (int ii = 0; ii <= width; ii++)
+			cout << h;
+		cout << k << "\n";
+	}
+
+	if (type == "SIDE1") {
+		cout << i;
+	}
+
+
+	if (type == "SIDE2") {
+			cout << i;
+			for (int ii = 0; ii <= width; ii++)
+				cout << " ";
+			cout << i << "\r";
+	}
+
+	if (type == "BOTTOM") {
+		cout << f;
+		for (int ii = 0; ii <= width; ii++)
+			cout << h;
+		cout << e << "\n";
+	}
+
+
+}
+
+void setCursorPosition(unsigned int x, int y) {
+	HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
+#pragma warning( disable : 4838 )
+	COORD pos = { x, y };
+	SetConsoleCursorPosition(output, pos);
+
+}
+
 void ParseIncludeFile(string fname){
 	directory;
 	if (directory.size() == 0) {
@@ -782,16 +893,59 @@ string extension = "*.pat";
 
 //Check for Gosub to Label, Jump to Label. - TAZ 06/30/2018
 getFilesList(inputFolderPath,extension,filesPaths_pre);
+int temp = filesPaths_pre.size();
+unsigned char a = 177, b = 219, c = 185;
+
+if (HEADER_GRAPHIC) {
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	setCursorPosition(5, 7);
+	cout << "PreParse Check" << endl;
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14);
+	setCursorPosition(5, 8);
+	for (int i = 0; i <= temp * 2; i++)
+		cout << a;
+
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	setCursorPosition(5, 10);
+	cout << "Parsing Pattern Files(s)" << endl;
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11);
+	setCursorPosition(5, 11);
+	for (int i = 0; i <= temp * 2; i++)
+		cout << a;
+
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	setCursorPosition(5, 13);
+	cout << "Converting Pattern(s)" << endl;
+
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	setCursorPosition(5, 16);
+	cout << "Writing Pattern(s)" << endl;
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
+
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14);
+	setCursorPosition(5, 8);
+}
 vector<string>::const_iterator it = filesPaths_pre.begin();
 while( it != filesPaths_pre.end())
 {
 	int ret2 = ParseGosubLabel(*it, filesPaths_pre);
     it++;
+	if (HEADER_GRAPHIC) {
+		cout << b;
+		cout << b;
+	}
 }
-
+if (HEADER_GRAPHIC) {
+	cout << b;
+	cout << b;
+}
 vector<string> filesPaths;
 getFilesList(inputFolderPath, extension, filesPaths);
 vector<string>::const_iterator it2 = filesPaths.begin();
+if (HEADER_GRAPHIC) {
+	setCursorPosition(5, 11);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11);
+}
 while (it2 != filesPaths.end())
 {
 	int ret = ParsePatternFile(directoryDebug, *it2);
@@ -802,11 +956,19 @@ while (it2 != filesPaths.end())
 	//  sprintf(buf, "%s/Out/%d.jpg", optfileName.c_str(),it->c_str());
 	//imwrite(buf,frame);   
 	it2++;
+	if (HEADER_GRAPHIC) {
+		cout << b;
+		cout << b;
+	}
 }
+if (HEADER_GRAPHIC) {
+	cout << b;
+	cout << b;
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 
+}
 return 0;
 }
-
 
 void ParseDefines(string directory){
 	if (directory.size() == 0) {
@@ -852,7 +1014,9 @@ bool UnScrambleResource(string res,vector<int> &idxs, string ps_map){
 		}
 	}
 	if( ps_idx == -1){
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		LogError("UnScrambleResource","pin_scramble " + G_PINSCRAMBLE_NAME + " not found." );
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 		_getch();
 		return false;
 	
@@ -924,7 +1088,7 @@ void NestLoopCheck(string temp, string patName) {
 	if (Nested_Loop > 1) {
 		Loop_Violation = true;
 		Nested_Loop = 0; // reset nested loop counter
-		Loop_Pattern_List = Loop_Pattern_List +"\n" +patName;
+		Loop_Pattern_List = Loop_Pattern_List +"\n  " +patName;
 		//cout << "Encountered a nested loop violation " << Nested_Loop << " for pattern: " << pattern.name << "."<< endl;
 	}
 }
@@ -959,7 +1123,6 @@ void Initialize(){
 	ParseVecDef(directory);
 	
 	ParseScrambleFile(directory,"pin_scramble.cpp");
-	
 }
 
 void WriteVecPattern(string dirout, Pattern &pattern){
@@ -975,9 +1138,9 @@ void WriteVecPattern(string dirout, Pattern &pattern){
 	for (  vector<string>::iterator it= pattern.m_listVecConv->begin(); it != pattern.m_listVecConv->end(); ++it){
 		Log("WriteVecPatterns", *it);
 
-		NestLoopCheck(*it, pattern.name);
+			NestLoopCheck(*it, pattern.name);
 
-		outfile << *it << endl;
+			outfile << *it << endl;
 	}
 
 		outfile.close();
@@ -991,6 +1154,16 @@ void WriteVecPatterns(){
 	//}
 
 	int i=0;
+	int xpos = 0, ypos = 0;
+	unsigned char a = 177, b = 219;
+
+	if (HEADER_GRAPHIC) {
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
+		setCursorPosition(5, 17);
+		for (size_t i = 0; i < vsEXECPATNAMES.size(); i++)
+			cout << a;
+		setCursorPosition(XPosLast, YPosLast);
+	}
 
 	for(size_t  c = 0; c < vsEXECPATNAMES.size(); c++){
 		for (  vector<Pattern>::iterator it = vvsPATTERNS.begin(); it != vvsPATTERNS.end(); ++it,++i){
@@ -998,9 +1171,16 @@ void WriteVecPatterns(){
 			string name =  trim(it->name);
 
 			if( vsEXECPATNAMES.at(c).compare(name) == 0 ){
-
+				//cout << "  Writing " << name << endl;
 				WriteVecPattern(directoryOut,*it);
-			
+				if (HEADER_GRAPHIC) {
+					xpos, ypos = currentCurPos();
+					//cout << xpos <<  " : " << ypos << endl;
+					setCursorPosition(5 + c, 17);
+					cout << b;
+					setCursorPosition(xpos, ypos);
+					//cout << xpos << " : " << ypos << endl;
+				}
 				break;
 			}
 		}                              
@@ -1023,7 +1203,17 @@ int FindFromPatterns(string pat_name){
 void ConvertPatterns(){
 	
 	int i=0;
-	
+	int xpos=0, ypos=0;
+	unsigned char a = 177 ,b = 219;
+
+	if (HEADER_GRAPHIC) {
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		setCursorPosition(5, 14);
+		for (size_t i = 0; i < vsEXECPATNAMES.size(); i++)
+			cout << a;
+		setCursorPosition(0, 22);
+	}
+
 	if(G_MODE ==  MODE1)
 	vvsPATTERNS.back().LoadPatInits("_global_");
 
@@ -1033,15 +1223,25 @@ void ConvertPatterns(){
 			string name =  trim(it->name);
 
 			if( vsEXECPATNAMES.at(c).compare(name) == 0 ){
-				
+
 				it->Convert(directoryOut);
-				cout <<"Converted " << name << "." << endl;
+				cout <<"  Converted " << name  << endl;
 				//it->printdata(outfile);
+				if (HEADER_GRAPHIC) {
+					xpos, ypos = currentCurPos();
+					
+					//cout << xpos <<  " : " << ypos << endl;
+					setCursorPosition(5 + c, 14);
+					cout << b;
+					setCursorPosition(xpos, ypos);
+					//cout << xpos << " : " << ypos << endl;
+				}
 				break;
 			}
-		}                              
+		} 
 	}
-
+	XPosLast = xpos;
+	YPosLast = ypos;
 }
 
 void CleanUp(){
@@ -1106,8 +1306,6 @@ void CreateFolder(const char * path)
 	}
 }
 
-
-
 string RemoveChar(string string_in, string remove_char) {
 	for (size_t c = 0; c < remove_char.size(); c++) {
 		string_in.erase(std::remove(string_in.begin(), string_in.end(), remove_char.at(c)), string_in.end());
@@ -1121,6 +1319,7 @@ time_t cvt_time(char const *time) {
     struct tm t = {0};
     static const char month_names[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 
+#pragma warning( disable : 4996 )
     sscanf(time, "%s %d %d", s_month, &day, &year);
 
     month = (strstr(month_names, s_month)-month_names)/3;
@@ -1133,18 +1332,124 @@ time_t cvt_time(char const *time) {
     return mktime(&t);
 }
 
+string filterMicroInst(string type, string uInst) {
+	bool foundvecMultiSite;
+	smatch match15;
+	string strTest = " VEC  (1:XXXX XXXX  0XX0X  XXX)";
+	string Space = " ";
+	strTest = RemoveChar(strTest, Space);
+	regex vecMultiSite_keywords("(^[[:s:]]*%*[[:s:]]*VEC[[:s:]]*)(\\([[:s:]]*[[:d:]]+[[:s:]]*:)([[:s:]]*[[:w:]]*[[:s:]]*[[:w:]]*[[:s:]]*)(\\)[[:s:]]*,*)([[:s:]]*[[:w:]]*.*)", std::regex_constants::icase);
+	foundvecMultiSite = regex_search(uInst, match15, vecMultiSite_keywords);
+	string uInstFiltered;
+
+	if ((type == "VEC_Multi_SITE") && (foundvecMultiSite)) {
+			if (match15[5].str() != "") {
+				uInstFiltered = match15[1].str() + Space + match15[3].str() + Space + "," + match15[5].str();
+			}
+			else {
+				uInstFiltered = match15[1].str() + Space + match15[3].str();
+			}
+		return uInstFiltered;
+	}
+	return uInst;
+}
+
+void buildHeader() {
+	if (MAX_WINDOW) { MoveWindow(hWnd, NewWidth, NewHeight, WindowWidth, WindowHeight, TRUE); }
+	setCursorPosition(0, 0);
+
+	const time_t ONE_DAY = 24 * 60 * 60;
+	const char *buildDate = __DATE__;
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	TitleBox("TOP");
+	TitleBox("SIDE2");
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("DIVIDER");
+	TitleBox("SIDE2");
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("SIDE2");
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("BOTTOM");
+	setCursorPosition(2, 1);
+	cout << "\t\t\tAPG Tool Build Date: " << buildDate << endl;
+
+	setCursorPosition(0, 6);
+
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14);
+	//system("color 0e");
+	unsigned char a = 177, b = 219, c = 185;
+	TitleBox("TOP");
+	TitleBox("SIDE2");
+	cout << "\r";
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("SIDE2");
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("DIVIDER");
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11);
+
+	TitleBox("SIDE2");
+	cout << "\r";
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("SIDE2");
+	cout << "\r";
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("DIVIDER");
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+
+	TitleBox("SIDE2");
+	cout << "\r";
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("SIDE2");
+	cout << "\r";
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("DIVIDER");
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
+
+	TitleBox("SIDE2");
+	cout << "\r";
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("SIDE2");
+	cout << "\r";
+	TitleBox("SIDE1");
+	cout << "\n";
+
+	TitleBox("BOTTOM");
+
+	cout << "\n\n";
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+}
+
+
 int main(int argc, char* argv[])
 {
 const time_t ONE_DAY = 24 * 60 * 60 ;
 const char *buildDate = __DATE__ ;
+if(HEADER_GRAPHIC){ buildHeader(); }
+int start = clock();
+//double diff;
 //############################################################
 //Regex Experiment
 //############################################################
-	//string input;
-	//input = "   startLOOP 5";
-	//input = "% u_low_4:";
-	//input = " mar	        gosub, shift_into_datreg, nolatch";
-	//input = "tyarnold1@gmail.com";
 	//regex keywords("([tyarnold1]+)@([[:w:]]+)\.com");
 	// \w => [[:w:]]  \s => [[:s:]] \d => [[:d:]] 
 	//regex keywords("^[[:s:]]*(STARTLOOP)");
@@ -1202,7 +1507,10 @@ for (int a = 0; a < argc; a++) {
 			MessageBox(NULL, "Input Directory does not exist.\nPlease create input_files directory.", "", MB_ICONWARNING | MB_OK);
 			return 0;
 		}
-		cout << "Input directory: " << argv[a + 1] << "\n";
+		if (HEADER_GRAPHIC) {
+			setCursorPosition(2, 3);
+		}
+		cout << "   Input Directory: " << argv[a + 1] << "\n";
 		directory = directory + "\\";
 		Custom_Input = true;
 	}
@@ -1228,16 +1536,18 @@ for (int a = 0; a < argc; a++) {
 				break;
 			}
 		}
+		if (HEADER_GRAPHIC) {
+			setCursorPosition(2, 4);
+		}
 		Custom_Output = true;
 		directoryOut = directoryOut + "\\";
-		cout << "Output directory: " << argv[a + 1] << "\n";
+		cout << "   Output Directory: " << argv[a + 1] << "\n";
 	}
 	else if (arg.compare("/dirdebug") == 0) {
 		directoryDebug = RemoveChar(argv[a + 1], " \r\n");
 		directoryDebug = directoryDebug;
 		//cout << "Directory Exits :" << directoryDebug << ": " << dirExists(directoryDebug) << "\n";
 		if (!dirExists(directoryDebug)) {
-			Sleep(1000);
 			lpMyString = directoryDebug.c_str();
 			message = "Create Directory: " + directoryDebug + "?\n[Yes] Creates Directory\n[No] Debug directory not written to.";
 			lpcMessage = message.c_str();
@@ -1260,25 +1570,30 @@ for (int a = 0; a < argc; a++) {
 	}
 }
 if (G_USAGE) {
-	cout << "=============================================================================" << "\n";
+		if (HEADER_GRAPHIC) {
+		setCursorPosition(0, 22);
+	}
+
+	cout << "  =============================================================================" << "\n";
 	cout << "\t\t\t\tUsage Examples" << "\n";
-	cout << "=============================================================================" << "\n";
-	cout << "Example usage 1: Shows version date only and exits" << "\n";
-	cout << "APG_TOOL_VX.X " << "/version" << "\n\n";
-	cout << "Example usage 2: Pause for error message " << "\n";
-	cout << "APG_TOOL_VX.X " << "/errnohalt" << "\n\n";
-	cout << "Example usage 3: Pause for warning message" << "\n";
-	cout << "APG_TOOL_VX.X " << "/warnnohalt" << "\n\n";
-	cout << "Example usage 4: Don't store original pattern to debug output" << "\n";
-	cout << "APG_TOOL_VX.X " << "/no_orig_code" << "\n\n";
-	cout << "Example usage 5: Turn debug on " << "\n";
-	cout << "APG_TOOL_VX.X " << "/debug_on" << "\n\n";
-	cout << "Example usage 6: Select input files directory " << "\n";
-	cout << "APG_TOOL_VX.X " << "/dirin my_input_files" << "\n\n";
-	cout << "Example usage 7: Select and/or create if not exists output files directory " << "\n";
-	cout << "APG_TOOL_VX.X " << "/dirout my_output_files" << "\n\n";
-	cout << "Example usage 8: Select and/or create if not exists debug files directory " << "\n";
-	cout << "APG_TOOL_VX.X " << "/dirdebug my_debug_files" << "\n\n";
+	cout << "  =============================================================================" << "\n";
+	cout << "  Example usage 1: Shows version date only and exits" << "\n";
+	cout << "  APG_TOOL_VX.X " << "/version" << "\n\n";
+	cout << "  Example usage 2: Pause for error message " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/errnohalt" << "\n\n";
+	cout << "  Example usage 3: Pause for warning message" << "\n";
+	cout << "  APG_TOOL_VX.X " << "/warnnohalt" << "\n\n";
+	cout << "  Example usage 4: Don't store original pattern to debug output" << "\n";
+	cout << "  APG_TOOL_VX.X " << "/no_orig_code" << "\n\n";
+	cout << "  Example usage 5: Turn debug on " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/debug_on" << "\n\n";
+	cout << "  Example usage 6: Select input files directory " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/dirin my_input_files" << "\n\n";
+	cout << "  Example usage 7: Select and/or create if not exists output files directory " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/dirout my_output_files" << "\n\n";
+	cout << "  Example usage 8: Select and/or create if not exists debug files directory " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/dirdebug my_debug_files" << "\n\n";
+	_getch();
 	return 0;
 }
 if(!Custom_Input){
@@ -1287,7 +1602,14 @@ if(!Custom_Input){
 		MessageBox(NULL, "Default Input Directory does not exist.\nPlease create input_files directory.", "", MB_ICONWARNING | MB_OK);
 		return 0;
 	}
-	cout << "Input directory: " << "input_files" << "\n";
+	if (HEADER_GRAPHIC) {
+		setCursorPosition(2, 3);
+	}
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	cout << "   Input Directory:  ";
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	cout << directory;
+
 	directory = directory + "\\";
 }
 
@@ -1297,9 +1619,16 @@ if (!Custom_Output) {
 		lpMyString = directoryOut.c_str();
 		CreateDirectory(lpMyString, NULL);
 	}
-	cout << "Output directory: " << "output_files" << "\n";
+	if (HEADER_GRAPHIC) {
+		setCursorPosition(2, 4);
+	}
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	cout << "   Output Directory: ";
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	cout << directoryOut;
 	directoryOut = directoryOut + "\\";
 }
+
 
 if ((Custom_DebugOutput)) {
 	//directoryDebug = "debug_files";
@@ -1307,12 +1636,23 @@ if ((Custom_DebugOutput)) {
 		lpMyString = directoryDebug.c_str();
 		CreateDirectory(lpMyString, NULL);
 	}
-	cout << "Debug directory: " << directoryDebug << "\n";
+	if (HEADER_GRAPHIC) {
+		setCursorPosition(45, 4);
+	}
+	string tempDir = directoryDebug;
+	tempDir.erase(tempDir.end() - 1);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	cout << "Debug Directory: ";
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	cout << tempDir << "\n";
 	directoryDebug = directoryDebug + "\\";
 }
 
 if(check_version)
 {
+	if (HEADER_GRAPHIC) {
+		setCursorPosition(1, 18);
+	}
 	cout << buildDate << endl;
 	if (!G_GUI) {
 		_getch();
@@ -1334,21 +1674,32 @@ if(num_of_days > 5){
 	return 0 ;
 }
 */
-
+if (HEADER_GRAPHIC) {
+	setCursorPosition(1, 19);
+}
 Initialize();
 
 if(G_PINSCRAMBLE_NAME.length() < 1 ){
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 	LogError("Variable ","pin_scramble not specified in config.txt");
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 	_getch();
 	return -1;
 }
 
 ParsePatternFiles(directory);
+if (HEADER_GRAPHIC) {
+	setCursorPosition(0, 22);
+}
+else {
+	cout << "\n";
+}
 
 ConvertPatterns();
 
-if(G_MODE ==  MODE1)
+if (G_MODE == MODE1) {
 	WriteVecPatterns();
+}
 else{
 	WritePatternReqs();
 }
@@ -1361,18 +1712,32 @@ warnlogfile.close();
 if (directoryDebug.size() == 0) {
 	directoryDebug = "debug_files\\";
 }
-if (Loop_Violation) { // Added for Nested Loop Violation. - TAZ 06/07/2018
+if (Loop_Violation) { // Added for Nested Loop Violation. - TAZ 06/07/2018 
 	string temp_str = Loop_Pattern_List;
 	temp_str.erase(temp_str.size());
 	message = "Encountered a nested loop violation for pattern(s): "+ temp_str +".";
 	lpcMessage = message.c_str();
 	int msgboxID = MessageBox(NULL, lpcMessage, "", MB_ICONWARNING | MB_OK);
-	cout << "Encountered a nested loop violation " << Nested_Loop << " for pattern(s): " << temp_str << "."<< endl;
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+	cout << "  Encountered a nested loop violation for pattern(s): " << temp_str << "."<< endl;
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 }
 
-if(G_WARN_CNT > 0)
-cout << G_WARN_CNT << " warning(s). See /"+ directoryDebug+"warning_logs.txt." <<endl;
-cout << "Done. Press any key to quit..." <<endl;
+if (G_WARN_CNT > 0) {
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2);
+	cout << "  " << G_WARN_CNT << " warning(s). See /" + directoryDebug + "warning_logs.txt." << endl;
+}
+SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+cout << "  Done. Press any key to quit..." <<endl;
+//diff = (clock() - start) / (double)(CLOCKS_PER_SEC);
+//cout << "Program Execution Time:" << diff  << endl;
+// current date/time based on current system
+time_t result = time(NULL);
+
+// convert now to string form
+char str[26];
+ctime_s(str, sizeof str, &result);
+//cout << "The local date and time is: " << str << endl;
 if (!G_GUI) {
 	_getch();
 }
