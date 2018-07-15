@@ -80,6 +80,9 @@ extern int G_WARN_CNT;
 
 extern string directory;
 
+extern int XPosLast;
+extern int YPosLast;
+
 
 //#define _debug_on_
 

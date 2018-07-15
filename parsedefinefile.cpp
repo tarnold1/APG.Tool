@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "parsedefinefile.h" 
 #include <windows.h>
+#include "common.h"
 
 extern void addDefinition(string def_str,string fname);
 extern bool FindDef(string &str); 
@@ -11,6 +12,8 @@ bool check_ifdef(string str){
 	else
 		return false;
 } 
+extern int XPosLast;
+extern int YPosLast;
 
 int ParseDefineFile(string dirout,string filename){
 	if (dirout.size() == 0) {
@@ -35,6 +38,11 @@ int ParseDefineFile(string dirout,string filename){
 	ifstream in(filename.c_str(), ios::in | ios::binary);
 
 	  if(!in) {
+		  XPosLast, YPosLast = currentCurPos();
+		  //cout << XPosLast << " : " << YPosLast << endl;
+		  setCursorPosition(XPosLast, YPosLast);
+
+		setCursorPosition(5, 22);
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		LogError("ParseDefineFile", "Cannot open input file - " + filename);
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
@@ -44,13 +52,11 @@ int ParseDefineFile(string dirout,string filename){
 
 	  Log("ParseDefineFile","before do...");
 	  do {
-
 		
 		pk = in.peek();
 		#ifdef _debug_parsing_
 		cout <<"mode : "<< mode <<" peek : " << pk << '\n'; //
 		#endif
-
 
 		if(mode == none){
 		

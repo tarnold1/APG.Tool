@@ -179,7 +179,7 @@ int ParseGosubLabel(string fname_in,vector<string>fileList) {
 
 			if (*ptl == *jp) {
 				// std::cout << "Found a jump to a gosub:" << str << " in file " << fname_in << endl; // Debug
-				message = "A Jump to a Subroutine was found!!\n\n[Yes] Change the ""jump"" micro instruction to ""gosub"" for " + str + "in pattern: " + fname_in + "?\n\n[No] Continue on with error and manually modify the pattern.";
+				message = "A Jump to a Subroutine was found!!\n\n[Yes] Change the ""jump"" micro instruction to ""gosub"" for " + str + " in pattern: " + fname_in + "?\n\n[No] Continue on with error and manually modify the pattern.";
 				lpcMessage = message.c_str();
 				int msgboxID = MessageBox(NULL, lpcMessage, "Error Encountered", MB_ICONERROR | MB_YESNO);
 				switch (msgboxID)
@@ -262,6 +262,7 @@ int creatSubPattern( string patName,string newPatName, int startLine, int stopLi
 	ifstream in3(patName.c_str(), ios::in | ios::binary);
 
 	if (!in3) {
+		setCursorPosition(5, 22);
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		LogError("ParsePatternFile", "Cannot open input file - patterns.pat.");
 		return -1;
@@ -352,6 +353,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
   ifstream in (fname_in.c_str(), ios:: in | ios::binary);
 
   if (! in ) {
+	setCursorPosition(5, 22);
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
     LogError("ParsePatternFile", "Cannot open input file - patterns.pat.");
     return -1;
@@ -363,6 +365,8 @@ int ParsePatternFile(string dirdebug,string fname_in) {
   do {
 
     pk = in .peek();
+	//cout << pk << endl;
+
 	#ifdef _debug_parsing_
     Log("ParsePatternFile3","pos: " + toString(in.tellg()) +" mode : " + toString(mode) + " peek : " + toString(pk)  ); //
 
@@ -400,6 +404,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
           mode = incl;
           Log("ParsePatternFile4", "incl");
         } else {
+		  setCursorPosition(5, 22);
 		  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
           LogError("ParsePatternFile :" + fname_in, pk + " error in parsing: expecting an \"include\" keyword");
           _getch();
@@ -420,6 +425,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
         if (pk == '{') { 
 		in.get(); //discard '{'
         } else {
+		  setCursorPosition(5, 22);
 		  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
           LogError("ParsePatternFile", "error in parsing: expecting an '{'");
           return -1;
@@ -434,9 +440,15 @@ int ParsePatternFile(string dirdebug,string fname_in) {
 		  buf2=" // ";
           mode = comment;
         } else {
-		  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
-          LogError("ParsePatternFile", "error in parsing: expecting a '/' - if this line is a comment");
-          return -1;
+		  if (pk != '*'){ // Added for one line block comments errors.  Example -> "/* One Line with Block Comment line */" TAZ - 07142018
+			  setCursorPosition(5, 22);
+			  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+			  LogError("ParsePatternFile", "error in parsing: expecting a '/' - if this line is a comment");
+			  return -1;
+		  }
+		  in.get(); //discard '*'
+		  mode = cl_comm1;
+		  buf2 = "";
         }
         Log("ParsePatternFile", "comment");
       } else if (pk == '%') { 
@@ -556,6 +568,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
 			in.get(); //discard ')'
           Log("ParsePatternFile10", buf);
           if (checkPatternExist(trim(buf))) {
+			setCursorPosition(5, 22);
             LogError("ParsePatternFile", "Add new pattern, " + buf + " already exist.");
             //_getch();
 			// LPCSTR msg = "Duplicate Pattern Encountered! " + buf.c_str +"\n\nRemove duplicate Pattern Name(s) and Rerun program.\n\n Exiting Program......";
@@ -596,6 +609,7 @@ int ParsePatternFile(string dirdebug,string fname_in) {
             buf = "";
             mode = none;
           } else {
+			setCursorPosition(5, 22);
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
             LogError("ParsePatternFile", "error in parsing: expecting an '}'. at context: init");
             return -1;

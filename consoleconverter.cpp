@@ -18,6 +18,9 @@
 
 #include "globals.h"
 
+HANDLE wHnd; /* write (output) handle */
+HANDLE rHnd; /* read (input handle */
+
 #define MAXPATTERN 100
 #define MAXPATINST 100
 #define MAXPATMICRO 100
@@ -27,6 +30,7 @@ typedef vector<VecOfStr> VecOfVecOfStr;
 
 #define VECTOR_WIDTH 128
 #define COUNTERS_CNT 61
+#define NESTED_LOOP_ALLOWED 4
 
 vector<int> G_COUNTERS(COUNTERS_CNT,0);
 vector<int> G_COUNTERS_RLD(COUNTERS_CNT,0);
@@ -135,10 +139,12 @@ int NewHeight = ((Height - WindowHeight) / 2);		//--- Used as a parameter to cen
 													//Getting the console window handle
 HWND hWnd = GetConsoleWindow();
 
+string REVISION = "3.00";
+
 //Declaring the function
 #pragma warning( disable : 4273 )
 
-BOOL WINAPI MoveWindow(_In_ HWND hWnd, _In_ int NewWidth, _In_ int NewHeight, _In_ int WindowWidth, _In_ int WindowHeight, _In_ BOOL bRepaint);
+//BOOL WINAPI MoveWindow(_In_ HWND hWnd, _In_ int NewWidth, _In_ int NewHeight, _In_ int WindowWidth, _In_ int WindowHeight, _In_ BOOL bRepaint);
 
 bool HEADER_GRAPHIC = true; // Header graphic box control (on/off)
 bool MAX_WINDOW = true; // Resize console window (on/off)
@@ -178,7 +184,10 @@ bool GoSub(int pat_idx, int patinst_idx, string called_pat){
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		LogError("GoSub",": subroutine " + called_pat + " not found." );
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-		_getch();
+		if (G_HALT_E) {
+			cout << "Hit any key to continue" << endl;
+			_getch();
+		}
 		return false;
 		}
 
@@ -642,7 +651,10 @@ void ParseConfigs(string directory){
 			  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 			  LogError("ParseConfigs", "Cannot open input file - config.txt.");
 			  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-			  _getch();
+			  if (G_HALT_E) {
+				  cout << "Hit any key to continue" << endl;
+				  _getch();
+			  }
 			  return;
 //		  }
 	  }
@@ -667,8 +679,10 @@ vector<string> pair = Tokenize(strd,'=');
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 			LogError("ParseConfigs : ", key + " not set.");
 			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-			if(G_HALT_E)
+			if (G_HALT_E) {
+				cout << "Hit any key to continue" << endl;
 				_getch();
+			}
 			continue;
 		}
 
@@ -710,16 +724,20 @@ vector<string> pair = Tokenize(strd,'=');
 						LogError("ParseConfigs", "Invalid t_cs number : " + toString(cs_num));
 						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 
-						if(G_HALT_E)
+						if (G_HALT_E) {
+							cout << "Hit any key to continue" << endl;
 							_getch();
+						}
 
 				}
 				else{
 					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 					LogError("ParseConfigs", "Invalid tester function : " + t_cs);
 					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-					if(G_HALT_E)
+					if (G_HALT_E) {
+						cout << "Hit any key to continue" << endl;
 						_getch();
+					}
 				}
 			}
 		}
@@ -728,8 +746,10 @@ vector<string> pair = Tokenize(strd,'=');
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		 LogError("ParseConfigs", "Unknown variable : " + key);
 		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-		 if(G_HALT_E)
-			_getch();;
+		 if (G_HALT_E) {
+			 cout << "Hit any key to continue" << endl;
+			 _getch();
+		 }
 		}
 		 
 	  }
@@ -802,7 +822,7 @@ void ParsePatInits(string directory){
 }
 
 void TitleBox(string type) {
-	unsigned  char d = 187;
+	unsigned char d = 187;
 	unsigned char e = 188;
 	unsigned char f = 200;
 	unsigned char g = 201;
@@ -810,41 +830,68 @@ void TitleBox(string type) {
 	unsigned char i = 186;
 	unsigned char j = 204;
 	unsigned char k = 185;
+	unsigned char l = 203;
 	int width = 80;
-	int length = 1;
+	int width2 = 18;
 
-	cout << " ";
 	if (type == "TOP") {
+		cout << " ";
 		cout << g;
 		for (int ii = 0; ii <= width; ii++)
 			cout << h;
-		cout << d << "\n";
+		cout << d << " \n";
 	}
 
 	if (type == "DIVIDER") {
+		cout << " ";
 		cout << j;
 		for (int ii = 0; ii <= width; ii++)
 			cout << h;
-		cout << k << "\n";
+		cout << k << " \n";
 	}
 
 	if (type == "SIDE1") {
+		cout << " ";
 		cout << i;
 	}
 
-
 	if (type == "SIDE2") {
-			cout << i;
+		cout << " ";
+		cout << i;
 			for (int ii = 0; ii <= width; ii++)
 				cout << " ";
-			cout << i << "\r";
+			cout << i << " \r";
 	}
 
 	if (type == "BOTTOM") {
+		cout << " ";
 		cout << f;
 		for (int ii = 0; ii <= width; ii++)
 			cout << h;
-		cout << e << "\n";
+		cout << e << " \n";
+	}
+
+	if (type == "SIDE1B") {
+		cout << " ";
+		cout << i;
+		for (int ii = 0; ii <= width2; ii++)
+			cout << " ";
+		cout << i << " \r";
+	}
+
+	if (type == "SMALLBOTTOM") {
+		cout << " ";
+		cout << f;
+		for (int ii = 0; ii <= width2; ii++)
+			cout << h;
+		cout << e << " \n";
+	}
+
+	if (type == "DIVIDER2") {
+		cout << l;
+		for (int ii = 0; ii <= width2; ii++)
+			cout << h;
+		cout << k << "\n";
 	}
 
 
@@ -897,32 +944,32 @@ int temp = filesPaths_pre.size();
 unsigned char a = 177, b = 219, c = 185;
 
 if (HEADER_GRAPHIC) {
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
 	setCursorPosition(5, 7);
 	cout << "PreParse Check" << endl;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 30);
 	setCursorPosition(5, 8);
 	for (int i = 0; i <= temp * 2; i++)
 		cout << a;
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
 	setCursorPosition(5, 10);
 	cout << "Parsing Pattern Files(s)" << endl;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 27);
 	setCursorPosition(5, 11);
 	for (int i = 0; i <= temp * 2; i++)
 		cout << a;
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
 	setCursorPosition(5, 13);
 	cout << "Converting Pattern(s)" << endl;
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
 	setCursorPosition(5, 16);
 	cout << "Writing Pattern(s)" << endl;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 20);
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 30);
 	setCursorPosition(5, 8);
 }
 vector<string>::const_iterator it = filesPaths_pre.begin();
@@ -944,7 +991,7 @@ getFilesList(inputFolderPath, extension, filesPaths);
 vector<string>::const_iterator it2 = filesPaths.begin();
 if (HEADER_GRAPHIC) {
 	setCursorPosition(5, 11);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 27);
 }
 while (it2 != filesPaths.end())
 {
@@ -964,8 +1011,7 @@ while (it2 != filesPaths.end())
 if (HEADER_GRAPHIC) {
 	cout << b;
 	cout << b;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
 }
 return 0;
 }
@@ -1085,7 +1131,7 @@ void NestLoopCheck(string temp, string patName) {
 	{
 		Nested_Loop = Nested_Loop - 1;
 	}
-	if (Nested_Loop > 1) {
+	if (Nested_Loop > NESTED_LOOP_ALLOWED) {
 		Loop_Violation = true;
 		Nested_Loop = 0; // reset nested loop counter
 		Loop_Pattern_List = Loop_Pattern_List +"\n  " +patName;
@@ -1158,7 +1204,7 @@ void WriteVecPatterns(){
 	unsigned char a = 177, b = 219;
 
 	if (HEADER_GRAPHIC) {
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 20);
 		setCursorPosition(5, 17);
 		for (size_t i = 0; i < vsEXECPATNAMES.size(); i++)
 			cout << a;
@@ -1211,7 +1257,7 @@ void ConvertPatterns(){
 		setCursorPosition(5, 14);
 		for (size_t i = 0; i < vsEXECPATNAMES.size(); i++)
 			cout << a;
-		setCursorPosition(0, 22);
+		setCursorPosition(0, 23);
 	}
 
 	if(G_MODE ==  MODE1)
@@ -1357,10 +1403,13 @@ string filterMicroInst(string type, string uInst) {
 void buildHeader() {
 	if (MAX_WINDOW) { MoveWindow(hWnd, NewWidth, NewHeight, WindowWidth, WindowHeight, TRUE); }
 	setCursorPosition(0, 0);
+	LONG style = GetWindowLong(hWnd, GWL_STYLE);
+	style = style & ~(WS_MAXIMIZEBOX);
+	SetWindowLong(hWnd, GWL_STYLE, style);
 
 	const time_t ONE_DAY = 24 * 60 * 60;
 	const char *buildDate = __DATE__;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
 	TitleBox("TOP");
 	TitleBox("SIDE2");
 	TitleBox("SIDE1");
@@ -1381,7 +1430,7 @@ void buildHeader() {
 
 	setCursorPosition(0, 6);
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 14);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 30);
 	//system("color 0e");
 	unsigned char a = 177, b = 219, c = 185;
 	TitleBox("TOP");
@@ -1395,7 +1444,7 @@ void buildHeader() {
 	cout << "\n";
 
 	TitleBox("DIVIDER");
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 11);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 27);
 
 	TitleBox("SIDE2");
 	cout << "\r";
@@ -1408,7 +1457,7 @@ void buildHeader() {
 	cout << "\n";
 
 	TitleBox("DIVIDER");
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
 
 	TitleBox("SIDE2");
 	cout << "\r";
@@ -1421,7 +1470,7 @@ void buildHeader() {
 	cout << "\n";
 
 	TitleBox("DIVIDER");
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 4);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 20);
 
 	TitleBox("SIDE2");
 	cout << "\r";
@@ -1435,17 +1484,88 @@ void buildHeader() {
 
 	TitleBox("BOTTOM");
 
+	//cout << "\n";
+	setCursorPosition(63, 18);
+	TitleBox("DIVIDER2");
+	setCursorPosition(62, 19);
+	TitleBox("SIDE1B");
+	setCursorPosition(62, 20);
+	TitleBox("SMALLBOTTOM");
+	setCursorPosition(64, 19);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
+	cout << " Program Rev: " << REVISION << endl;
 	cout << "\n\n";
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 }
 
+void ShowConsoleCursor(bool showFlag)
+{
+	HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
 
+	CONSOLE_CURSOR_INFO     cursorInfo;
+
+	GetConsoleCursorInfo(out, &cursorInfo);
+	cursorInfo.bVisible = showFlag; // set the cursor visibility
+	SetConsoleCursorInfo(out, &cursorInfo);
+}
+
+void consoleGraphic(){
+	/* Window size coordinates, be sure to start index at zero! */
+	SMALL_RECT windowSize = { 0, 0, 69, 34 };
+
+	/* A COORD struct for specificying the console's screen buffer dimensions */
+	COORD bufferSize = { 70, 35 };
+
+	/* Setting up different variables for passing to WriteConsoleOutput */
+	COORD characterBufferSize = { 2, 2 };
+	COORD characterPosition = { 1, 0 };
+	SMALL_RECT consoleWriteArea = { 0, 1, 0, 1 };
+
+	/* A CHAR_INFO structure containing data about a single character */
+	CHAR_INFO characterQ;
+	characterQ.Char.AsciiChar = 205; /* Setting the Char.Ascii data member of characterQ to the value of 'Q' */
+
+									 /* Setting up the color values for our Q character: blue + green + intensity */
+	characterQ.Attributes = FOREGROUND_BLUE | FOREGROUND_GREEN | 0x0040 |
+		FOREGROUND_INTENSITY;
+
+
+	/* initialize handles */
+	wHnd = GetStdHandle(STD_OUTPUT_HANDLE);
+	rHnd = GetStdHandle(STD_INPUT_HANDLE);
+
+	/* Set the console's title */
+	SetConsoleTitle("Our shiny new title!");
+
+	/* Set the window size */
+	SetConsoleWindowInfo(wHnd, TRUE, &windowSize);
+
+	/* Set the screen's buffer size */
+	SetConsoleScreenBufferSize(wHnd, bufferSize);
+
+	/* Write our character buffer (a single character currently) to the console buffer */
+	WriteConsoleOutputA(wHnd, &characterQ, characterBufferSize, characterPosition, &consoleWriteArea);
+
+	getchar();
+
+
+}
 int main(int argc, char* argv[])
 {
 const time_t ONE_DAY = 24 * 60 * 60 ;
 const char *buildDate = __DATE__ ;
-if(HEADER_GRAPHIC){ buildHeader(); }
+if(HEADER_GRAPHIC){
+	buildHeader();
+
+LPCSTR lpcMessage2;
+string tempREVISION = "  APG Tool " + REVISION;
+lpcMessage2 = tempREVISION.c_str();
+SetConsoleTitle(lpcMessage2);
+ShowConsoleCursor(false);
+}
 int start = clock();
+
+
 //double diff;
 //############################################################
 //Regex Experiment
@@ -1571,7 +1691,7 @@ for (int a = 0; a < argc; a++) {
 }
 if (G_USAGE) {
 		if (HEADER_GRAPHIC) {
-		setCursorPosition(0, 22);
+		setCursorPosition(0, 23);
 	}
 
 	cout << "  =============================================================================" << "\n";
@@ -1593,6 +1713,8 @@ if (G_USAGE) {
 	cout << "  APG_TOOL_VX.X " << "/dirout my_output_files" << "\n\n";
 	cout << "  Example usage 8: Select and/or create if not exists debug files directory " << "\n";
 	cout << "  APG_TOOL_VX.X " << "/dirdebug my_debug_files" << "\n\n";
+	cout << "  Example usage 9: Create per_pat_inits.txt file " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/req" << "\n\n";
 	_getch();
 	return 0;
 }
@@ -1605,9 +1727,9 @@ if(!Custom_Input){
 	if (HEADER_GRAPHIC) {
 		setCursorPosition(2, 3);
 	}
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
 	cout << "   Input Directory:  ";
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
 	cout << directory;
 
 	directory = directory + "\\";
@@ -1622,9 +1744,9 @@ if (!Custom_Output) {
 	if (HEADER_GRAPHIC) {
 		setCursorPosition(2, 4);
 	}
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
 	cout << "   Output Directory: ";
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
 	cout << directoryOut;
 	directoryOut = directoryOut + "\\";
 }
@@ -1641,9 +1763,9 @@ if ((Custom_DebugOutput)) {
 	}
 	string tempDir = directoryDebug;
 	tempDir.erase(tempDir.end() - 1);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
 	cout << "Debug Directory: ";
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 15);
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
 	cout << tempDir << "\n";
 	directoryDebug = directoryDebug + "\\";
 }
@@ -1683,13 +1805,14 @@ if(G_PINSCRAMBLE_NAME.length() < 1 ){
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 	LogError("Variable ","pin_scramble not specified in config.txt");
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	if (G_HALT_E)
 	_getch();
 	return -1;
 }
 
 ParsePatternFiles(directory);
 if (HEADER_GRAPHIC) {
-	setCursorPosition(0, 22);
+	setCursorPosition(0, 23);
 }
 else {
 	cout << "\n";
@@ -1729,6 +1852,8 @@ if (G_WARN_CNT > 0) {
 }
 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
 cout << "  Done. Press any key to quit..." <<endl;
+ShowConsoleCursor(true);
+
 //diff = (clock() - start) / (double)(CLOCKS_PER_SEC);
 //cout << "Program Execution Time:" << diff  << endl;
 // current date/time based on current system

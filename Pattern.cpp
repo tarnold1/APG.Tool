@@ -356,10 +356,10 @@ for(size_t  c = 0; c < params.size(); c++){
 		case HOLD:{
 			getCurPatInst()->isHoldYalu = true;
 		}break;
-		case OYMAIN:{source = G_YMAIN;}break;
-			
+		case ZERO: {G_YADDR = 0; }break;
+		case ALL1S: {G_YADDR = 65535; }break;
+		case OYMAIN: {source = G_YMAIN; }break;
 		case OYBASE:{source = G_YBASE;}break;
-		
 		case OYFIELD:{source = G_YFIELD;}break;
 		}// switch
 
@@ -479,6 +479,8 @@ for(size_t c = 0; c < params.size(); c++){
 		case HOLD:{
 			getCurPatInst()->isHoldXalu = true;
 		}break;
+		case ZERO: {G_XADDR = 0; }break;
+		case ALL1S: {G_XADDR = 65535; }break;
 		case OXMAIN:{source = G_XMAIN;}break;
 		case OXBASE:{source = G_XBASE;}break;
 		case OXFIELD:{source = G_XFIELD;}break;
@@ -1223,8 +1225,10 @@ for(size_t c = 0; c < params.size(); c++)
 					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 					LogError("f_Udata","Failed to convert " + param + " to long.");
 					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-					if(G_HALT_E)
+					if (G_HALT_E) {
+						cout << "Hit any key to continue" << endl;
 						_getch();
+					}
 				}
 			}
 			else if(param.find("0x") != -1){
@@ -1237,8 +1241,10 @@ for(size_t c = 0; c < params.size(); c++)
 					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 					LogError("f_Udata","Failed to convert " + param + " to long.");
 					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-					if(G_HALT_E)
+					if (G_HALT_E) {
+						cout << "Hit any key to continue" << endl;
 						_getch();
+					}
 				}
 			}
 			else{
@@ -2351,8 +2357,10 @@ bool SetIntReg(unsigned int &tgt_reg, string &reg_name, string &str_val){
 				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 				LogError("LoadPatInits - load " + reg_name,"failed to convert " + str_val +" to long.");
 				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-				if(G_HALT_E)
+				if (G_HALT_E) {
+					cout << "Hit any key to continue" << endl;
 					_getch();
+				}
 				return false;
 			}
 }
@@ -2372,8 +2380,10 @@ bool SetReg(unsigned long &tgt_reg, string &reg_name, string &str_val){
 				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 				LogError("LoadPatInits - load " + reg_name,"failed to convert " + str_val +" to long.");
 				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-				if(G_HALT_E)
+				if (G_HALT_E) {
+					cout << "Hit any key to continue" << endl;
 					_getch();
+				}
 				return false;
 			}
 }
@@ -2457,16 +2467,20 @@ if( iter == stdmapPATINITS.end() ){ // if found
 						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 						LogError("LoadPatInits - load counter","failed to convert " + trim(pair.at(1)) +" to long.");
 						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-						if(G_HALT_E)
+						if (G_HALT_E) {
+							cout << "Hit any key to continue" << endl;
 							_getch();
+						}
 					}
 				}
 				else{
 					    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 						LogError("LoadPatInits", "Invalid counter number : " + toString(ctr));
 						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-						if(G_HALT_E)
+						if (G_HALT_E) {
+							cout << "Hit any key to continue" << endl;
 							_getch();
+						}
 				}
 		}
 		else if(reg.compare("tri_state")== 0){
@@ -2573,8 +2587,10 @@ if( iter == stdmapPATINITS.end() ){ // if found
 						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 						LogError("LoadPatInits", "Invalid t_cs number : " + toString(cs_num));
 						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-						if(G_HALT_E)
+						if (G_HALT_E) {
+							cout << "Hit any key to continue" << endl;
 							_getch();
+						}
 					}
 
 				}
@@ -2582,8 +2598,10 @@ if( iter == stdmapPATINITS.end() ){ // if found
 					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 					LogError("LoadPatInits", "Invalid tester function : " + t_cs);
 					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-					if(G_HALT_E)
+					if (G_HALT_E) {
+						cout << "Hit any key to continue" << endl;
 						_getch();
+					}
 				}
 			}
 		}
@@ -2592,8 +2610,10 @@ if( iter == stdmapPATINITS.end() ){ // if found
 		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
 		 LogError("LoadPatInits", reg + " - unknown register or function.");
 		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-		 if(G_HALT_E)
-			_getch();
+		 if (G_HALT_E) {
+			 cout << "Hit any key to continue" << endl;
+			 _getch();
+		 }
 		}
 
 	}

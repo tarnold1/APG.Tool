@@ -65,6 +65,7 @@ string rtrim(string str);
 
 string trim(string str);
 string remove_comment(string in);
+string filterMicroInst(string type, string uInst);
 
 
 
@@ -83,6 +84,7 @@ void printl(string s, int num);
 
 bool FindDef(string &str);
 
+void setCursorPosition(unsigned int x, int y);
 
 
 
