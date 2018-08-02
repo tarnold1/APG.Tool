@@ -78,6 +78,10 @@ extern string G_VECDEF;
 
 extern int G_WARN_CNT;
 
+extern bool G_WARN_ALU;
+
+extern bool G_ALU_ON;
+
 extern string directory;
 
 extern int XPosLast;

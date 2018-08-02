@@ -30,7 +30,7 @@ typedef vector<VecOfStr> VecOfVecOfStr;
 
 #define VECTOR_WIDTH 128
 #define COUNTERS_CNT 61
-#define NESTED_LOOP_ALLOWED 4
+#define NESTED_LOOP_ALLOWED 2
 
 vector<int> G_COUNTERS(COUNTERS_CNT,0);
 vector<int> G_COUNTERS_RLD(COUNTERS_CNT,0);
@@ -68,6 +68,10 @@ bool G_VERBOSE = false;
 bool G_GUI = false;
 
 bool G_USAGE = false;
+
+bool G_WARN_ALU = false;
+
+bool G_ALU_ON = true;
 
 int Nested_Loop = 0;
 bool Loop_Violation = false;
@@ -139,7 +143,7 @@ int NewHeight = ((Height - WindowHeight) / 2);		//--- Used as a parameter to cen
 													//Getting the console window handle
 HWND hWnd = GetConsoleWindow();
 
-string REVISION = "3.00";
+string REVISION = "3.04";
 
 //Declaring the function
 #pragma warning( disable : 4273 )
@@ -436,7 +440,7 @@ void addPatInst(string patinst,string vecdef){
 			cout <<"rd : "<< rd << endl;	
 		#endif
 	    // Place Vec multi site filter here. Filter case example: "% VEC (1:1x011)". - TAZ 07/11/2018
-			rd = filterMicroInst("VEC_Multi_SITE",rd);
+			rd = filterMicroInst("VEC_RPT_Multi_SITE",rd);
 
 		if( rd.size() > 1)
 			lines.push_back(rd);
@@ -1384,16 +1388,17 @@ string filterMicroInst(string type, string uInst) {
 	string strTest = " VEC  (1:XXXX XXXX  0XX0X  XXX)";
 	string Space = " ";
 	strTest = RemoveChar(strTest, Space);
-	regex vecMultiSite_keywords("(^[[:s:]]*%*[[:s:]]*VEC[[:s:]]*)(\\([[:s:]]*[[:d:]]+[[:s:]]*:)([[:s:]]*[[:w:]]*[[:s:]]*[[:w:]]*[[:s:]]*)(\\)[[:s:]]*,*)([[:s:]]*[[:w:]]*.*)", std::regex_constants::icase);
-	foundvecMultiSite = regex_search(uInst, match15, vecMultiSite_keywords);
+	//regex vecMultiSite_keywords("(^[[:s:]]*%*[[:s:]]*VEC[[:s:]]*)(\\([[:s:]]*[[:d:]]+[[:s:]]*:)([[:s:]]*[[:w:]]*[[:s:]]*[[:w:]]*[[:s:]]*)(\\)[[:s:]]*,*)([[:s:]]*[[:w:]]*.*)", std::regex_constants::icase);
+	regex vec_rpt_MultiSite_keywords("(^[[:s:]]*%*[[:s:]]*(VEC[[:s:]]*|RPT[[:s:]]*[[:d:]]+)[[:s:]]*)(\\([[:s:]]*[[:d:]]+[[:s:]]*:)(.*)(\\)[[:s:]]*,*)([[:s:]]*[[:w:]]*.*)", std::regex_constants::icase);
+	foundvecMultiSite = regex_search(uInst, match15, vec_rpt_MultiSite_keywords);
 	string uInstFiltered;
 
-	if ((type == "VEC_Multi_SITE") && (foundvecMultiSite)) {
-			if (match15[5].str() != "") {
-				uInstFiltered = match15[1].str() + Space + match15[3].str() + Space + "," + match15[5].str();
+	if ((type == "VEC_RPT_Multi_SITE") && (foundvecMultiSite)) {
+			if (match15[6].str() != "") {
+				uInstFiltered = match15[1].str() + Space + match15[4].str() + Space + "," + match15[6].str();
 			}
 			else {
-				uInstFiltered = match15[1].str() + Space + match15[3].str();
+				uInstFiltered = match15[1].str() + Space + match15[4].str();
 			}
 		return uInstFiltered;
 	}
@@ -1621,6 +1626,10 @@ for (int a = 0; a < argc; a++) {
 		G_USAGE = true;
 	else if (arg.compare("/gui") == 0)
 		G_GUI = true;
+	else if (arg.compare("/alu_warn") == 0)
+		G_WARN_ALU = true;
+	else if (arg.compare("/alu_on") == 0)
+		G_ALU_ON = true;
 	else if (arg.compare("/dirin") == 0) {
 		directory = RemoveChar(argv[a + 1], " \r\n");
 		if (!dirExists(directory)) {
@@ -1715,6 +1724,10 @@ if (G_USAGE) {
 	cout << "  APG_TOOL_VX.X " << "/dirdebug my_debug_files" << "\n\n";
 	cout << "  Example usage 9: Create per_pat_inits.txt file " << "\n";
 	cout << "  APG_TOOL_VX.X " << "/req" << "\n\n";
+	cout << "  Example usage 10: Warning for X/Y ALU instructions encountred. " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/alu_warn" << "\n\n";
+	cout << "  Example usage 11: Turn X/Y ALU processing On. " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/alu_on" << "\n\n";
 	_getch();
 	return 0;
 }

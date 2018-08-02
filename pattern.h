@@ -64,7 +64,7 @@ public:
 	
 void ClearVecLines();
 void CommitVecLines();
-int InvertData(int dat_in);
+unsigned long InvertData(long dat_in);
 
 	void setIndex (int idx);
 	void setName (string nm);

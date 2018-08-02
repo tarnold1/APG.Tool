@@ -6,6 +6,7 @@
 #include "Pattern.h"
 #include  <bitset>
 #include <windows.h>
+#include <ctype.h>
 
 //////////////////////////////////////////////////////////////////////
 // Construction/Destruction
@@ -112,8 +113,8 @@ void Pattern::ClearVecLines(){
 		m_listPatInst->at(b).clearVecLines();
 	}
 }
-int Pattern::InvertData(int dat_in) {
-	int data_in = dat_in;
+unsigned long Pattern::InvertData(long dat_in) {
+	long data_in = dat_in;
 	int c, k;
 	string binary_str;
 	string binary_str_inv;
@@ -130,7 +131,7 @@ int Pattern::InvertData(int dat_in) {
 			binary_str_inv = binary_str_inv + "1";
 		}
 	}
-	int bin_2_lng = std::bitset<32>(binary_str_inv).to_ulong();
+	long bin_2_lng = std::bitset<32>(binary_str_inv).to_ulong();
 	return bin_2_lng;
 }
 
@@ -337,70 +338,279 @@ void Pattern::SetVecLineBits(vector<int> &idxs, char ch){
 	//cout << m_VectorLine << endl;
 	//_getch();
 }
+
 void Pattern::f_YAlu(vector<string> &params){
 
 unsigned long source;
+string sourceAName;
+string sourceBName;
+unsigned long sourceA;
+unsigned long sourceB;
+int carryBorrow = 0;
 
+for (size_t c = 0; c < params.size(); c++) {
+	std::transform(params.at(c).begin(), params.at(c).end(), params.at(c).begin(), [](char ch) { return std::toupper(ch); });
+}
 
+if ((std::find(params.begin(), params.end(), "CON") != params.end()) || (std::find(params.begin(), params.end(), "BON") != params.end())) {
+	carryBorrow = 1;
+}
 
-for(size_t  c = 0; c < params.size(); c++){
-	
-	#ifdef _debug_on_
-	Log("f_YAlu", "\tparam : " + params.at(c) ); //
-	#endif
+for (size_t c = 0; c < params.size(); c++) {
 	string p = params.at(c);
+	sourceAName = params.at(0);
+	sourceBName = params.at(1);
+
+	if ("YMAIN" == sourceAName) { sourceA = G_YMAIN; }
+	if ("YMAIN" == sourceBName) { sourceB = G_YMAIN; }
+	if ("YFIELD" == sourceAName) { sourceA = G_YFIELD; }
+	if ("YFIELD" == sourceBName) { sourceB = G_YFIELD; }
+	if ("YBASE" == sourceAName) { sourceA = G_YBASE; }
+	if ("YBASE" == sourceBName) { sourceB = G_YBASE; }
+	if ("YUDATA" == sourceAName) { sourceA = G_UDATA; }
+	if ("YUDATA" == sourceBName) { sourceB = G_UDATA; }
+
+#ifdef _debug_on_
+	Log("f_YAlu", "\tparam : " + params.at(c)); //
+#endif
 	int idx;
-	if( FindFromTable( ADD_GEN_OPS_table, p, idx) ){ // do not convert to upper when searching
-	 
-		switch(idx){
-		case HOLD:{
+	if (FindFromTable(ADD_GEN_OPS_table, p, idx)) { // do not convert to upper when searching
+
+		switch (idx) {
+		case HOLD: {
 			getCurPatInst()->isHoldYalu = true;
 		}break;
 		case ZERO: {G_YADDR = 0; }break;
 		case ALL1S: {G_YADDR = 65535; }break;
+
+		case INCREMENT:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: INCREMENT is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = sourceA + carryBorrow; }
+			break;
+		case DECREMENT:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: DECREMENT is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = sourceA - carryBorrow; }
+			break;
+		case DOUBLE:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: DOUBLE is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = sourceA * 2; }
+			break;
+		case COMP:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: COMP is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = InvertData(sourceA); }
+			break;
+		case NAND:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: NAND is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = ~(sourceA & sourceB); }
+			break;
+		case NOR:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: NOR is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = ~(sourceA | sourceB); }
+			break;
+		case XNOR:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: XNOR is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = ~(sourceA ^ sourceB); }
+			break;
+		case AANDBBAR:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: XNOR is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = (sourceA & InvertData(sourceB)); }
+			break;
+		case ANANDBBAR:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: XNOR is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = ~(sourceA & InvertData(sourceB)); }
+			break;
+		case AORBBAR:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: XNOR is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = (sourceA | InvertData(sourceB)); }
+			break;
+		case ANORBBAR:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: XNOR is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = ~(sourceA | InvertData(sourceB)); }
+			break;
 		case OYMAIN: {source = G_YMAIN; }break;
-		case OYBASE:{source = G_YBASE;}break;
-		case OYFIELD:{source = G_YFIELD;}break;
+		case OYBASE: {source = G_YBASE; }break;
+		case OYFIELD: {source = G_YFIELD; }break;
 		}// switch
 
 	}//if
-	else if( FindFromTable( YALU_OP_1_2_table, p, idx) ){ // do not convert to upper when searching
-	 
-		switch(idx){
-		
-		case YUDATA:{
-			G_YADDR = 0;
-			for(int i = 1; i <= 16; i++){
+	else if (FindFromTable(DATGEN_OPS_table, p, idx)) { // do not convert to upper when searching
+		switch (idx) {
+		case AND:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: AND is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = sourceA & sourceB; }
+			break;
+		case OR:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: OR is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = sourceA | sourceB; }
+			break;
+		case XOR:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: XOR is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = sourceA ^ sourceB; }
+			break;
+		case ADD:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: ADD is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = sourceA + sourceB + carryBorrow; }
+			break;
+		case SUBTRACT:
+			if ((G_WARN_ALU) && !(G_ALU_ON)) { cout << "Alu option: SUBTRACT is currently not implemented." << endl; }
+			else
+				if ((G_ALU_ON) && !(G_WARN_ALU)) { G_YADDR = sourceA - sourceB - carryBorrow; }
+			break;
+		}
+	}
+	else if (FindFromTable(YALU_OP_1_2_table, p, idx)) { // do not convert to upper when searching
 
-				if( G_UDATA & ( 1 << i) ) {
-					G_YADDR |= (1 << i );
+		switch (idx) {
+
+		case YUDATA: {
+			G_YADDR = 0;
+			for (int i = 0; i <= 15; i++) {
+
+				if (G_UDATA & (1 << i)) {
+					G_YADDR |= (1 << i);
 				}
-			} 
-			}break;
+			}
+		}break;
 
 		} // switch
  // switch
 	} // else if
-		else if( FindFromTable( YALU_OPS_table, p, idx) ){ // do not convert to upper when searching
-	 
-		switch(idx){
-		
-		case DYMAIN:{
+	else if (FindFromTable(YALU_OPS_table, p, idx)) { // do not convert to upper when searching
+
+		switch (idx) {
+
+		case DYMAIN: {
 			G_YMAIN = G_YADDR;
-			/*	
+			/*
 			for(int i = 17; i <= 32; i++){
-	
+
 					if( G_UDATA & ( 1 << i) ) {
 					G_YMAIN = ~G_YMAIN & (1 << (i-16) );
 					}
 
-				} 
+				}
 			*/	}break;
 
+		case DYFIELD: {
+			if (G_ALU_ON) { G_YFIELD = G_YADDR; }
+			/*
+			for(int i = 1; i <= 16; i++){
+
+			if( G_YADDR & ( 1 << i) ) {
+			G_YMAIN = ~G_YMAIN & (1 << i) );
+			}
+
+			} */
+			// cout << "DYMAIN : G_YMAIN = " << G_YMAIN << endl;
+
+		}break;
+		case DYBASE: {
+			if (G_ALU_ON) { G_YBASE = G_YADDR; }
+			/*
+			for(int i = 1; i <= 16; i++){
+
+			if( G_YADDR & ( 1 << i) ) {
+			G_YMAIN = ~G_YMAIN & (1 << i) );
+			}
+
+			} */
+			// cout << "DYMAIN : G_YMAIN = " << G_YMAIN << endl;
+
+		}break;
 		} // switch
 
 	}// else if
-
+	else if (FindFromTable(ADD_CARYY_BORROW_table, p, idx)) { // do not convert to upper when searching
+		switch (idx) {
+			case BBEQMAX:
+				if (G_WARN_ALU) { cout << "Alu option: BBEQMAX is currently not implemented." << endl; }
+				break;
+			case BBEQMIN:
+				if (G_WARN_ALU) { cout << "Alu option: BBEQMIN is currently not implemented." << endl; }
+				break;
+			case BBNEMAX:
+				if (G_WARN_ALU) { cout << "Alu option: BBNEMAX is currently not implemented." << endl; }
+				break;
+			case BBNEMIN:
+				if (G_WARN_ALU) { cout << "Alu option: BBNEMIN is currently not implemented." << endl; }
+				break;
+			case BFEQMAX:
+				if (G_WARN_ALU) { cout << "Alu option: BFEQMAX is currently not implemented." << endl; }
+				break;
+			case BFEQMIN:
+				if (G_WARN_ALU) { cout << "Alu option: BFEQMIN is currently not implemented." << endl; }
+				break;
+			case BFNEMAX:
+				if (G_WARN_ALU) { cout << "Alu option: BFNEMAX is currently not implemented." << endl; }
+				break;
+			case BFNEMIN:
+				if (G_WARN_ALU) { cout << "Alu option: BFNEMIN is currently not implemented." << endl; }
+				break;
+			case BMEQMAX:
+				if (G_WARN_ALU) { cout << "Alu option: BMEQMAX is currently not implemented." << endl; }
+				break;
+			case BMEQMIN:
+				if (G_WARN_ALU) { cout << "Alu option: BMEQMIN is currently not implemented." << endl; }
+				break;
+			case BMNEMAX:
+				if (G_WARN_ALU) { cout << "Alu option: BMNEMAX is currently not implemented." << endl; }
+				break;
+			case BMNEMIN:
+				if (G_WARN_ALU) { cout << "Alu option: BMNEMIN is currently not implemented." << endl; }
+				break;
+			case CBEQMAX:
+				if (G_WARN_ALU) { cout << "Alu option: CBEQMAX is currently not implemented." << endl; }
+				break;
+			case CBEQMIN:
+				if (G_WARN_ALU) { cout << "Alu option: CBEQMIN is currently not implemented." << endl; }
+				break;
+			case CBNEMAX:
+				if (G_WARN_ALU) { cout << "Alu option: CBNEMAX is currently not implemented." << endl; }
+				break;
+			case CBNEMIN:
+				if (G_WARN_ALU) { cout << "Alu option: CBNEMIN is currently not implemented." << endl; }
+				break;
+			case CMEQMAX:
+				if (G_WARN_ALU) { cout << "Alu option: CMEQMAX is currently not implemented." << endl; }
+				break;
+			case CFEQMAX:
+				if (G_WARN_ALU) { cout << "Alu option: CFEQMAX is currently not implemented." << endl; }
+				break;
+			case CFEQMIN:
+				if (G_WARN_ALU) { cout << "Alu option: CFEQMIN is currently not implemented." << endl; }
+				break;
+			case CFNEMIN:
+				if (G_WARN_ALU) { cout << "Alu option: CFNEMIN is currently not implemented." << endl; }
+				break;
+			case CMNEMAX:
+				if (G_WARN_ALU) { cout << "Alu option: CMNEMAX is currently not implemented." << endl; }
+				break;
+			case CFNEMAX:
+				if (G_WARN_ALU) { cout << "Alu option: CFNEMAX is currently not implemented." << endl; }
+				break;
+			case CMEQMIN:
+				if (G_WARN_ALU) { cout << "Alu option: CMEQMIN is currently not implemented." << endl; }
+				break;
+			case CMNEMIN:
+				if (G_WARN_ALU) { cout << "Alu option: CMNEMIN is currently not implemented." << endl; }
+				break;
+			}
+		}// else if
 
 }// for
 
@@ -461,10 +671,22 @@ for(int i = 0; i <= 15; i++){
 }
 
 }
+
 void Pattern::f_XAlu(vector<string> &params){
-
-
 long source;
+string sourceAName;
+string sourceBName;
+unsigned long sourceA;
+unsigned long sourceB;
+int carryBorrow = 0;
+
+for (size_t c = 0; c < params.size(); c++) {
+	std::transform(params.at(c).begin(), params.at(c).end(), params.at(c).begin(), [](char ch) { return std::toupper(ch); });
+}
+
+if ((std::find(params.begin(), params.end(), "CON") != params.end()) || (std::find(params.begin(), params.end(), "BON") != params.end())) {
+	carryBorrow = 1;
+}
 
 for(size_t c = 0; c < params.size(); c++){
 
@@ -473,6 +695,18 @@ for(size_t c = 0; c < params.size(); c++){
 	#endif
 	string p = params.at(c);
 	int idx;
+	sourceAName = params.at(0);
+	sourceBName = params.at(1);
+
+	if ("XMAIN" == sourceAName) { sourceA = G_XMAIN; }
+	if ("XMAIN" == sourceBName) { sourceB = G_XMAIN; }
+	if ("XFIELD" == sourceAName) { sourceA = G_XFIELD; }
+	if ("XFIELD" == sourceBName) { sourceB = G_XFIELD; }
+	if ("XBASE" == sourceAName) { sourceA = G_XBASE; }
+	if ("XBASE" == sourceBName) { sourceB = G_XBASE; }
+	if ("XUDATA" == sourceAName) { sourceA = G_UDATA; }
+	if ("XUDATA" == sourceBName) { sourceB = G_UDATA; }
+
 	if( FindFromTable( ADD_GEN_OPS_table, p, idx) ){ // do not convert to upper when searching
 	 
 		switch(idx){
@@ -481,20 +715,70 @@ for(size_t c = 0; c < params.size(); c++){
 		}break;
 		case ZERO: {G_XADDR = 0; }break;
 		case ALL1S: {G_XADDR = 65535; }break;
+		case INCREMENT: 
+			G_XADDR = sourceA+carryBorrow; 
+			break;
+		case DECREMENT: 
+			 G_XADDR = sourceA-carryBorrow; 
+			break;
+		case DOUBLE:
+			G_XADDR = sourceA*2; 
+			break;
+		case COMP:
+			G_XADDR = InvertData(sourceA); 
+			break;
+		case NAND:
+			G_XADDR = ~(sourceA & sourceB); 
+			break;
+		case NOR:
+			G_XADDR = ~(sourceA | sourceB); 
+			break;
+		case XNOR:
+			G_XADDR = ~(sourceA ^ sourceB); 
+			break;
+		case AANDBBAR:
+			 G_XADDR = (sourceA & InvertData(sourceB)); 
+			break;
+		case ANANDBBAR:
+			G_XADDR = ~(sourceA & InvertData(sourceB)); 
+			break;
+		case AORBBAR:
+			 G_XADDR = (sourceA | InvertData(sourceB)); 
+			break;
+		case ANORBBAR:
+			 G_XADDR = ~(sourceA | InvertData(sourceB)); 
+			break;
 		case OXMAIN:{source = G_XMAIN;}break;
 		case OXBASE:{source = G_XBASE;}break;
 		case OXFIELD:{source = G_XFIELD;}break;
-
 		} // switch
-
 	}//if
+	else if (FindFromTable(DATGEN_OPS_table, p, idx)) { // do not convert to upper when searching
+		switch (idx) {
+		case AND:
+			G_XADDR = sourceA & sourceB;
+			break;
+		case OR:
+			G_XADDR = sourceA | sourceB;
+			break;
+		case XOR:
+			G_XADDR = sourceA ^ sourceB;
+			break;
+		case ADD:
+				G_XADDR = sourceA + sourceB + carryBorrow;
+			break;
+		case SUBTRACT:
+			G_XADDR = sourceA - sourceB - carryBorrow;
+			break;
+		}
+	}
 	else if( FindFromTable( XALU_OP_1_2_table, p, idx) ){ // do not convert to upper when searching
 	 
 		switch(idx){
 		
 		case XUDATA:{
 				G_XADDR = 0;
-				for(int i = 17; i <= 32; i++){
+				for(int i = 16; i <= 31; i++){
 	
 					if( G_UDATA & ( 1 << i) ) {
 					G_XADDR |=  (1 << (i-16) );
@@ -524,11 +808,112 @@ for(size_t c = 0; c < params.size(); c++){
 				// cout << "DXMAIN : G_XMAIN = " << G_XMAIN << endl;
 				
 					}break;
+		case DXFIELD: {
+			if (G_ALU_ON) { G_XFIELD = G_XADDR; }
+			/*
+			for(int i = 1; i <= 16; i++){
+
+			if( G_XADDR & ( 1 << i) ) {
+			G_XMAIN = ~G_XMAIN & (1 << i) );
+			}
+
+			} */
+			// cout << "DXMAIN : G_XMAIN = " << G_XMAIN << endl;
+
+		}break;
+		case DXBASE: {
+			if (G_ALU_ON) { G_XBASE = G_XADDR; }
+			/*
+			for(int i = 1; i <= 16; i++){
+
+			if( G_XADDR & ( 1 << i) ) {
+			G_XMAIN = ~G_XMAIN & (1 << i) );
+			}
+
+			} */
+			// cout << "DXMAIN : G_XMAIN = " << G_XMAIN << endl;
+
+		}break;
 
 		} // switch
 
 	}// else if
-
+	else if (FindFromTable(ADD_CARYY_BORROW_table, p, idx)) { // do not convert to upper when searching
+		switch (idx) {
+		case BBEQMAX:
+			if (G_WARN_ALU) { cout << "Alu option: BBEQMAX is currently not implemented." << endl; }
+			break;
+		case BBEQMIN:
+			if (G_WARN_ALU) { cout << "Alu option: BBEQMIN is currently not implemented." << endl; }
+			break;
+		case BBNEMAX:
+			if (G_WARN_ALU) { cout << "Alu option: BBNEMAX is currently not implemented." << endl; }
+			break;
+		case BBNEMIN:
+			if (G_WARN_ALU) { cout << "Alu option: BBNEMIN is currently not implemented." << endl; }
+			break;
+		case BFEQMAX:
+			if (G_WARN_ALU) { cout << "Alu option: BFEQMAX is currently not implemented." << endl; }
+			break;
+		case BFEQMIN:
+			if (G_WARN_ALU) { cout << "Alu option: BFEQMIN is currently not implemented." << endl; }
+			break;
+		case BFNEMAX:
+			if (G_WARN_ALU) { cout << "Alu option: BFNEMAX is currently not implemented." << endl; }
+			break;
+		case BFNEMIN:
+			if (G_WARN_ALU) { cout << "Alu option: BFNEMIN is currently not implemented." << endl; }
+			break;
+		case BMEQMAX:
+			if (G_WARN_ALU) { cout << "Alu option: BMEQMAX is currently not implemented." << endl; }
+			break;
+		case BMEQMIN:
+			if (G_WARN_ALU) { cout << "Alu option: BMEQMIN is currently not implemented." << endl; }
+			break;
+		case BMNEMAX:
+			if (G_WARN_ALU) { cout << "Alu option: BMNEMAX is currently not implemented." << endl; }
+			break;
+		case BMNEMIN:
+			if (G_WARN_ALU) { cout << "Alu option: BMNEMIN is currently not implemented." << endl; }
+			break;
+		case CBEQMAX:
+			if (G_WARN_ALU) { cout << "Alu option: CBEQMAX is currently not implemented." << endl; }
+			break;
+		case CBEQMIN:
+			if (G_WARN_ALU) { cout << "Alu option: CBEQMIN is currently not implemented." << endl; }
+			break;
+		case CBNEMAX:
+			if (G_WARN_ALU) { cout << "Alu option: CBNEMAX is currently not implemented." << endl; }
+			break;
+		case CBNEMIN:
+			if (G_WARN_ALU) { cout << "Alu option: CBNEMIN is currently not implemented." << endl; }
+			break;
+		case CMEQMAX:
+			if (G_WARN_ALU) { cout << "Alu option: CMEQMAX is currently not implemented." << endl; }
+			break;
+		case CFEQMAX:
+			if (G_WARN_ALU) { cout << "Alu option: CFEQMAX is currently not implemented." << endl; }
+			break;
+		case CFEQMIN:
+			if (G_WARN_ALU) { cout << "Alu option: CFEQMIN is currently not implemented." << endl; }
+			break;
+		case CFNEMIN:
+			if (G_WARN_ALU) { cout << "Alu option: CFNEMIN is currently not implemented." << endl; }
+			break;
+		case CMNEMAX:
+			if (G_WARN_ALU) { cout << "Alu option: CMNEMAX is currently not implemented." << endl; }
+			break;
+		case CFNEMAX:
+			if (G_WARN_ALU) { cout << "Alu option: CFNEMAX is currently not implemented." << endl; }
+			break;
+		case CMEQMIN:
+			if (G_WARN_ALU) { cout << "Alu option: CMEQMIN is currently not implemented." << endl; }
+			break;
+		case CMNEMIN:
+			if (G_WARN_ALU) { cout << "Alu option: CMNEMIN is currently not implemented." << endl; }
+			break;
+		}
+	}// else if
 
 }// for
 
@@ -1607,6 +1992,100 @@ case UDATA:{
 return 0;
 }
 
+vector<string> Check_XAluDefaults(vector<string> &v_params) {
+
+	for (size_t c = 0; c < v_params.size(); c++) {
+		std::transform(v_params.at(c).begin(), v_params.at(c).end(), v_params.at(c).begin(), [](char ch) { return std::toupper(ch); });
+	}
+
+	if ((std::find(v_params.begin(), v_params.end(), "CON") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "BON") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "BOFF") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "COFF") != v_params.end()))
+		int donothing = 0;
+	else
+		v_params.push_back("COFF");
+	if ((std::find(v_params.begin(), v_params.end(), "AND") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "ADD") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "SUBTRACT") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "ALL1S") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "ZERO") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "COMP") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "DECREMENT") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "INCREMENT") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "DOUBLE") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "NAND") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "NOR") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "OR") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "XNOR") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "XOR") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "HOLD") != v_params.end()))
+		int donothing = 0;
+	else
+		v_params.push_back("HOLD");
+	if ((std::find(v_params.begin(), v_params.end(), "DXMAIN") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "DXBASE") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "DXFIELD") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "NODEST") != v_params.end()))
+		int donothing = 0;
+	else
+		v_params.push_back("NODEST");
+	if ((std::find(v_params.begin(), v_params.end(), "OXMAIN") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "OXBASE") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "OXFIELD") != v_params.end()))
+		int donothing = 0;
+	else
+		v_params.push_back("OXMAIN");
+	return v_params;
+}
+vector<string> Check_YAluDefaults(vector<string> &v_params) {
+	for (size_t c = 0; c < v_params.size(); c++) {
+		std::transform(v_params.at(c).begin(), v_params.at(c).end(), v_params.at(c).begin(), [](char ch) { return std::toupper(ch); });
+	}
+
+	if ((std::find(v_params.begin(), v_params.end(), "CON") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "BON") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "BOFF") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "COFF") != v_params.end()) )
+		int donothing = 0;
+	else
+		v_params.push_back("COFF");
+	if ((std::find(v_params.begin(), v_params.end(), "AND") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "ADD") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "SUBTRACT") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "ALL1S") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "ZERO") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "COMP") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "DECREMENT") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "INCREMENT") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "DOUBLE") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "NAND") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "NOR") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "OR") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "XNOR") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "XOR") != v_params.end()) ||
+		(std::find(v_params.begin(), v_params.end(), "HOLD") != v_params.end()) )
+		int donothing = 0;
+	else
+		v_params.push_back("HOLD");
+	if ((std::find(v_params.begin(), v_params.end(), "DYMAIN") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "DYBASE") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "DYFIELD") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "NODEST") != v_params.end()))
+		int donothing = 0;
+	else
+		v_params.push_back("NODEST");
+	if ((std::find(v_params.begin(), v_params.end(), "OYMAIN") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "OYBASE") != v_params.end()) || 
+		(std::find(v_params.begin(), v_params.end(), "OYFIELD") != v_params.end()))
+		int donothing = 0;
+	else
+		v_params.push_back("OYMAIN");
+	return v_params;
+}
+
+
+
 int Pattern::ExecuteMicroInst(string mi,string vecdef){
 
 string s_apg_inst = mi.substr(0,mi.find_first_of(" \t"));
@@ -1622,6 +2101,7 @@ vector<string> v_params = Tokenize(s_params,',');
 ToUpper(s_apg_inst);
 
 int retval;
+vector<string> temp_params;
 
 if( !FindFromTable(APG_INST_table, s_apg_inst, retval)){
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
@@ -1631,10 +2111,22 @@ if( !FindFromTable(APG_INST_table, s_apg_inst, retval)){
 	
 switch(retval){
 case YALU:{
-	f_YAlu(v_params);
+	if (v_params.size() < 6) {
+		temp_params = Check_YAluDefaults(v_params);
+		f_YAlu(temp_params);
+	}
+	else {
+		f_YAlu(v_params);
+	}
 		  }break;
 case XALU:{
-	f_XAlu(v_params);
+		if (v_params.size() < 6) {
+			temp_params = Check_XAluDefaults(v_params);
+			f_XAlu(temp_params);
+		}
+		else {
+			f_XAlu(v_params);
+		}
 		  }break;
 case DATGEN:{
 	f_DatGen(v_params);
@@ -1965,6 +2457,33 @@ for(size_t  i = cur_idx; i < m_listPatInst->size(); i++){
 bool Pattern::CheckFutureAddrChange2(string func, vector<string> &params){
 
 	if(func == "XALU"){
+		for (size_t c = 0; c < params.size(); c++) {
+			std::transform(params.at(c).begin(), params.at(c).end(), params.at(c).begin(), [](char ch) { return std::toupper(ch); });
+		}
+		if( (std::find(params.begin(), params.end(), "AND") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ADD") != params.end()) ||
+			(std::find(params.begin(), params.end(), "SUBTRACT") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ALL1S") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ZERO") != params.end()) ||
+			(std::find(params.begin(), params.end(), "COMP") != params.end()) ||
+			(std::find(params.begin(), params.end(), "DECREMENT") != params.end()) ||
+			(std::find(params.begin(), params.end(), "INCREMENT") != params.end()) ||
+			(std::find(params.begin(), params.end(), "DOUBLE") != params.end()) ||
+			(std::find(params.begin(), params.end(), "NAND") != params.end()) ||
+			(std::find(params.begin(), params.end(), "NOR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "OR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "XNOR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "XOR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "AANDBBAR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ANANDBBAR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ANORBBAR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "AORBBAR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "HOLD") != params.end()) )
+			int donothing = 0;
+		else
+			params.push_back("HOLD");
+
+
 		Log("CheckFutureAddrChanged2","called " + func );
 		//_getch();
 		for(size_t c = 0; c < params.size(); c++){
@@ -1993,6 +2512,31 @@ bool Pattern::CheckFutureAddrChange2(string func, vector<string> &params){
 	
 	}
 	else if(func == "YALU"){
+		for (size_t c = 0; c < params.size(); c++) {
+			std::transform(params.at(c).begin(), params.at(c).end(), params.at(c).begin(), [](char ch) { return std::toupper(ch); });
+		}
+		if ((std::find(params.begin(), params.end(), "AND") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ADD") != params.end()) ||
+			(std::find(params.begin(), params.end(), "SUBTRACT") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ALL1S") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ZERO") != params.end()) ||
+			(std::find(params.begin(), params.end(), "COMP") != params.end()) ||
+			(std::find(params.begin(), params.end(), "DECREMENT") != params.end()) ||
+			(std::find(params.begin(), params.end(), "INCREMENT") != params.end()) ||
+			(std::find(params.begin(), params.end(), "DOUBLE") != params.end()) ||
+			(std::find(params.begin(), params.end(), "NAND") != params.end()) ||
+			(std::find(params.begin(), params.end(), "NOR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "OR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "XNOR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "XOR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "AANDBBAR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ANANDBBAR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "ANORBBAR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "AORBBAR") != params.end()) ||
+			(std::find(params.begin(), params.end(), "HOLD") != params.end()))
+			int donothing = 0;
+		else
+			params.push_back("HOLD");
 
 		Log("CheckFutureAddrChanged","called " + func );
 		//_getch();
