@@ -44,13 +44,13 @@ int ParseGosubLabel(string fname_in, vector<string>fileList) {
 	vector <string >gosubLabel;
 	vector <string >labelList;
 
-	regex marDoneReturn_keywords("^[[:s:]]*%*[[:s:]]*(mar|var)+[[:s:]]*(done|return)+", std::regex_constants::icase);
-	regex pinFunc_keywords("^[[:s:]]*(pinfunc)", std::regex_constants::icase);
-	regex label_keywords("^[[:s:]]*%+[[:s:]]*([[:w:]]+)[[:s:]]*:+");
-	regex gosub_keywords("^[[:s:]]*%*[[:s:]]*mar[[:s:]]+gosub[[:s:]]*,[[:s:]]*([[:w:]]+)[[:s:]]*", std::regex_constants::icase);
-	regex jump_keywords("^[[:s:]]*%*[[:s:]]*mar[[:s:]]+jump[[:s:]]*,[[:s:]]*([[:w:]]+)[[:s:]]*", std::regex_constants::icase);
-	regex pattern_keywords("^[[:s:]]*PATTERN.[[:s:]]*([[:w:]]+)", std::regex_constants::icase);
-	//regex gosub_keywords("(mar)+[[:s:]]*(gosub)+[[:s:]]*,+[[:s:]]*([[:w:]]+)[[:s:]]*,*[[:s:]]*([[:w:]]*)");
+	regex marDoneReturn_keywords("^\\s*%*\\s*(mar|var)+\\s*(done|return)+", std::regex_constants::icase);
+	regex pinFunc_keywords("^\\s*(pinfunc)", std::regex_constants::icase);
+	regex label_keywords("^\\s*%+\\s*(\\w+)\\s*:+");
+	regex gosub_keywords("^\\s*%*\\s*mar\\s+gosub\\s*,\\s*(\\w+)\\s*", std::regex_constants::icase);
+	regex jump_keywords("^\\s*%*\\s*mar\\s+jump\\s*,\\s*(\\w+)\\s*", std::regex_constants::icase);
+	regex pattern_keywords("^\\s*PATTERN.\\s*(\\w+)", std::regex_constants::icase);
+	//regex gosub_keywords("(mar)+\\s*(gosub)+\\s*,+\\s*(\\w+)\\s*,*\\s*(\\w*)");
 
 	ifstream in2(fname_in.c_str(), ios::in | ios::binary);
 	int i = 0;
@@ -162,8 +162,8 @@ int ParseGosubLabel(string fname_in, vector<string>fileList) {
 	} while (!in2.eof());
 	in2.close();
 
-	regex Pattern_keywords("^[[:s:]]*input_files\\\\([[:w:]]+).pat", std::regex_constants::icase);
-	regex JumpGosub_keywords("^[[:s:]]*%*mar[[:s:]]*jump[[:s:]]*,[[:s:]]*([[:w:]]+)", std::regex_constants::icase);
+	regex Pattern_keywords("^\\s*input_files\\\\(\\w+).pat", std::regex_constants::icase);
+	regex JumpGosub_keywords("^\\s*%*mar\\s*jump\\s*,\\s*(\\w+)", std::regex_constants::icase);
 
 	smatch match7;
 	smatch match8;
@@ -263,7 +263,7 @@ int creatSubPattern(string patName, string newPatName, int startLine, int stopLi
 
 	if (!in3) {
 		setCursorPosition(5, 22);
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+		 setTextColor(12);
 		LogError("ParsePatternFile", "Cannot open input file - patterns.pat.");
 		return -1;
 	}
@@ -354,7 +354,7 @@ int ParsePatternFile(string dirdebug, string fname_in) {
 
 	if (!in) {
 		setCursorPosition(5, 22);
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+		 setTextColor(12);
 		LogError("ParsePatternFile", "Cannot open input file - patterns.pat.");
 		return -1;
 	}
@@ -410,7 +410,7 @@ int ParsePatternFile(string dirdebug, string fname_in) {
 				}
 				else {
 					setCursorPosition(5, 22);
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+					 setTextColor(12);
 					LogError("ParsePatternFile :" + fname_in, pk + " error in parsing: expecting an \"include\" keyword");
 					_getch();
 					return -1;
@@ -435,7 +435,7 @@ int ParsePatternFile(string dirdebug, string fname_in) {
 				}
 				else {
 					setCursorPosition(5, 22);
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+					 setTextColor(12);
 					LogError("ParsePatternFile", "error in parsing: expecting an '{'");
 					return -1;
 				}
@@ -471,7 +471,7 @@ int ParsePatternFile(string dirdebug, string fname_in) {
 				cout << "Error at current line       :" << currentLine << endl;
 				if (pk != '*'){ // Added for one line block comments errors.  Example -> " One Line with Block Comment line " TAZ - 07142018
 				// setCursorPosition(5, 22);
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+				 setTextColor(12);
 				LogError("ParsePatternFile", "error in parsing: expecting a '/' - if this line is a comment");
 				return -1;
 				}
@@ -653,7 +653,7 @@ int ParsePatternFile(string dirdebug, string fname_in) {
 				}
 				else {
 					setCursorPosition(5, 22);
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+					 setTextColor(12);
 					LogError("ParsePatternFile", "error in parsing: expecting an '}'. at context: init");
 					return -1;
 				}

@@ -20,6 +20,7 @@ PatInst::PatInst(){
 	isRead = false;
 	isReadUdata = false;
 	isADHIZ = false;
+	isVTSET = false;
 	isVPULSE =  false;
 	m_listMicroInst = new vector<string>;
 	m_listVecConverted =  new vector<string>;

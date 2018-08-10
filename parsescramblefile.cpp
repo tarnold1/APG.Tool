@@ -33,9 +33,9 @@ int ParseScrambleFile(string dirname,string fname){
 	ifstream in( fname.c_str() , ios::in | ios::binary);
 
 	  if(!in) {
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+		 setTextColor(12);
 		LogError("ParseScrmableFile", "Cannot open input file - pin_scramble.cpp."); 
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		 setTextColor(10);
 		_getch();
 		return 0;
 	  }

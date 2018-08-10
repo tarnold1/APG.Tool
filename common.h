@@ -85,9 +85,7 @@ void printl(string s, int num);
 bool FindDef(string &str);
 
 void setCursorPosition(unsigned int x, int y);
-
-
-
+void setTextColor( int colorNum);
 
 bool FindVecDefIndex(string pinname, int &idx);
 

@@ -52,6 +52,7 @@ int G_COUNTER_SEL = 0; // index of the counter selected through recent call of C
 int G_PAT_IDX;
 int G_PATINST_IDX;
 int G_PATINST_SEL = 0; // index of pattern instruction currently processed in ConvertPatInst
+size_t rowSize;
 
 bool G_ADD_KNOWN = true;
 
@@ -68,6 +69,8 @@ bool G_VERBOSE = false;
 bool G_GUI = false;
 
 bool G_USAGE = false;
+
+bool G_CHANGELOG = false;
 
 bool G_WARN_ALU = false;
 
@@ -157,6 +160,76 @@ int XPosLast;
 int YPosLast;
 string RemoveChar(string string_in, string remove_char);
 string filterMicroInst(string type, string uInst);
+void changeLog() {
+	string changeLogMessage =	
+		R"(	_______________________________________________________________________________
+
+					APG Tool Change Log
+	_______________________________________________________________________________
+
+	08/14/2017
+	-Initial Release
+	_______________________________________________________________________________
+	11/03/17
+	-Added a  write once logic for Select 0.
+	_______________________________________________________________________________
+	12/14/17 Version 2.1
+	-Added - Duplicate pattern names Dialog Message with program exit.
+	-Fixed - VEC / RPT repeating count.
+	-Fixed - RPT Processing puts the operand on the next VEC instruction.
+	-Fixed - mar readudata H/L  issue resolved.
+	-Fixed - mar read and adhiz issue resolved.
+	-Fixed - vecdef continuation character '/' issue resolved.
+	-Added - VIHH2 for VEC w/RST_12V microinstruction resolved.
+	_______________________________________________________________________________
+	1/17/18
+	-Fix adhiz strobe bug resolved.
+	-Added multi vecdef capability.
+	-Added directory selection capability for input and output directories.
+	-Fix regression for  jam and data registers loads.
+	_______________________________________________________________________________
+	6/08/18
+	-Added DBM memory using register BUFBUF capability.
+	-Added Nested Loop jumps within a loop is Illegal warning dialog.
+	-Fixed Start Loop issue comments out resolved.
+	-Fixed Pin name in scramble with a Macro definition handling.
+	-Added cmpldr instruction to complement datareg data. 
+	-Fixed Counter reload is supported properly.
+	_______________________________________________________________________________
+	7/11/18
+	-Added Implement cntupdr and cntdndr micro instruction.
+	-Fixed Create PerPatInits file creation.
+		Usage : APG_TOOL_VX.X /req
+	-Fixed No original code in output file.Puts comments in with '//'.
+		Original code removed only comments remain.
+		Usage : APG_TOOL_VX.X /no_orig_code
+	-Fixed The comments /* and */ block comments issue resolved.
+		Comments are removed.
+	-Fixed Gosub when target is a label resolved.
+		Parsed label micro to mar done to create an optional new pattern.
+	-Added Header Graphics with progress bar for Parsing, Converting, Writing,
+		build date, and Revision.
+	_______________________________________________________________________________
+	7/25/18
+	-Added options for X/Y ALU ON/OFF and ALU Warnings ON/OFF.
+	_______________________________________________________________________________
+	8/1/18
+	-Added X/Y ALU operations below for multi SourceA/B combinations for 
+		checkout. X/Y ALU options processed: INCREMENT, DECREMENT, DOUBLE, COMP, 
+		NAND, NOR, AND, OR, XOR, ADD, and SUBTRACT
+	_______________________________________________________________________________
+	8/6/18
+	-Added Pinfunc VTSET instruction which selects the VAR Engine as the source of 
+		the time set.
+	-Added option to turn off header and progress bar graphics for unsupported terminals
+	-Added Change Log viewing option.
+		)";
+	cout << changeLogMessage << endl;
+}
+
+
+
+
 
 void getFilesList(string filePath,string extension, vector<string> & returnFileName)
 {
@@ -185,9 +258,9 @@ bool GoSub(int pat_idx, int patinst_idx, string called_pat){
 		}
 	}
 	if(new_idx == -1){
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+		 setTextColor(12);
 		LogError("GoSub",": subroutine " + called_pat + " not found." );
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		 setTextColor(10);
 		if (G_HALT_E) {
 			cout << "Hit any key to continue" << endl;
 			_getch();
@@ -652,9 +725,9 @@ void ParseConfigs(string directory){
 //		  inputFileName = "input_files";
 
 		  if (!in) {
-			  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+			   setTextColor(12);
 			  LogError("ParseConfigs", "Cannot open input file - config.txt.");
-			  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+			   setTextColor(10);
 			  if (G_HALT_E) {
 				  cout << "Hit any key to continue" << endl;
 				  _getch();
@@ -680,9 +753,9 @@ vector<string> pair = Tokenize(strd,'=');
 		string key = trim(pair.at(0));
 
 		if(pair.size() < 2){
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+			 setTextColor(12);
 			LogError("ParseConfigs : ", key + " not set.");
-			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+			 setTextColor(10);
 			if (G_HALT_E) {
 				cout << "Hit any key to continue" << endl;
 				_getch();
@@ -724,9 +797,9 @@ vector<string> pair = Tokenize(strd,'=');
 
 					}
 					else
-						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+						 setTextColor(12);
 						LogError("ParseConfigs", "Invalid t_cs number : " + toString(cs_num));
-						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+						 setTextColor(10);
 
 						if (G_HALT_E) {
 							cout << "Hit any key to continue" << endl;
@@ -735,9 +808,9 @@ vector<string> pair = Tokenize(strd,'=');
 
 				}
 				else{
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+					 setTextColor(12);
 					LogError("ParseConfigs", "Invalid tester function : " + t_cs);
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+					 setTextColor(10);
 					if (G_HALT_E) {
 						cout << "Hit any key to continue" << endl;
 						_getch();
@@ -747,9 +820,9 @@ vector<string> pair = Tokenize(strd,'=');
 		}
 		else
 		{
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+		 setTextColor(12);
 		 LogError("ParseConfigs", "Unknown variable : " + key);
-		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		  setTextColor(10);
 		 if (G_HALT_E) {
 			 cout << "Hit any key to continue" << endl;
 			 _getch();
@@ -773,9 +846,9 @@ void ParsePatInits(string directory){
 	ifstream in(directory+"per_pat_inits.txt", ios::in | ios::binary);
 
 	  if(!in) {
-		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+		  setTextColor(12);
 		LogError("ParsePatInits", "Cannot open input file - per_pat_inits.txt.");
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		 setTextColor(10);
 		_getch();
 		return;
 	  }
@@ -826,15 +899,16 @@ void ParsePatInits(string directory){
 }
 
 void TitleBox(string type) {
-	unsigned char d = 187;
-	unsigned char e = 188;
-	unsigned char f = 200;
-	unsigned char g = 201;
-	unsigned char h = 205;
-	unsigned char i = 186;
-	unsigned char j = 204;
-	unsigned char k = 185;
-	unsigned char l = 203;
+	if (!HEADER_GRAPHIC) { return; }
+	unsigned char d = 0xBB;
+	unsigned char e = 0xBC;
+	unsigned char f = 0xC8;
+	unsigned char g = 0xC9;
+	unsigned char h = 0xCD;
+	unsigned char i = 0xBA;
+	unsigned char j = 0xCC;
+	unsigned char k = 0xB9;
+	unsigned char l = 0xCB;
 	int width = 80;
 	int width2 = 18;
 
@@ -901,6 +975,12 @@ void TitleBox(string type) {
 
 }
 
+void setTextColor(int colorNum) {
+	if (!HEADER_GRAPHIC) { return; }
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), colorNum);
+	return;
+}
+
 void setCursorPosition(unsigned int x, int y) {
 	HANDLE output = GetStdHandle(STD_OUTPUT_HANDLE);
 #pragma warning( disable : 4838 )
@@ -945,35 +1025,29 @@ string extension = "*.pat";
 //Check for Gosub to Label, Jump to Label. - TAZ 06/30/2018
 getFilesList(inputFolderPath,extension,filesPaths_pre);
 int temp = filesPaths_pre.size();
-unsigned char a = 177, b = 219, c = 185;
+unsigned char a = 0xB1, b = 0xDB, c = 0xB9;
+
 
 if (HEADER_GRAPHIC) {
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
+	 setTextColor(31);
 	setCursorPosition(5, 7);
 	cout << "PreParse Check" << endl;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 30);
+	 setTextColor(30);
 	setCursorPosition(5, 8);
-	for (int i = 0; i <= temp * 2; i++)
+	for (int i = 0; i <= temp * 1; i++)
 		cout << a;
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
+	 setTextColor(31);
 	setCursorPosition(5, 10);
 	cout << "Parsing Pattern Files(s)" << endl;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 27);
+	 setTextColor(27);
 	setCursorPosition(5, 11);
-	for (int i = 0; i <= temp * 2; i++)
+	for (int i = 0; i <= temp * 1; i++)
 		cout << a;
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
-	setCursorPosition(5, 13);
-	cout << "Converting Pattern(s)" << endl;
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
-	setCursorPosition(5, 16);
-	cout << "Writing Pattern(s)" << endl;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 20);
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 30);
+	 setTextColor(30);
 	setCursorPosition(5, 8);
 }
 vector<string>::const_iterator it = filesPaths_pre.begin();
@@ -983,19 +1057,19 @@ while( it != filesPaths_pre.end())
     it++;
 	if (HEADER_GRAPHIC) {
 		cout << b;
-		cout << b;
+		//cout << b;
 	}
 }
 if (HEADER_GRAPHIC) {
 	cout << b;
-	cout << b;
+	//cout << b;
 }
 vector<string> filesPaths;
 getFilesList(inputFolderPath, extension, filesPaths);
 vector<string>::const_iterator it2 = filesPaths.begin();
 if (HEADER_GRAPHIC) {
 	setCursorPosition(5, 11);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 27);
+	 setTextColor(27);
 }
 while (it2 != filesPaths.end())
 {
@@ -1009,13 +1083,13 @@ while (it2 != filesPaths.end())
 	it2++;
 	if (HEADER_GRAPHIC) {
 		cout << b;
-		cout << b;
+		//cout << b;
 	}
 }
 if (HEADER_GRAPHIC) {
 	cout << b;
-	cout << b;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
+	//cout << b;
+	 setTextColor(26);
 }
 return 0;
 }
@@ -1064,9 +1138,9 @@ bool UnScrambleResource(string res,vector<int> &idxs, string ps_map){
 		}
 	}
 	if( ps_idx == -1){
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+		 setTextColor(12);
 		LogError("UnScrambleResource","pin_scramble " + G_PINSCRAMBLE_NAME + " not found." );
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		 setTextColor(10);
 		_getch();
 		return false;
 	
@@ -1120,8 +1194,10 @@ bool UnScrambleResource(string res,vector<int> &idxs, string ps_map){
 
 void NestLoopCheck(string temp, string patName) {
 	// ******** Added for Nested Loop Violation. - TAZ 06/07/2018 *************
-	regex keywords_startloop("^[[:s:]]*(STARTLOOP)");
-	regex keywords_endloop("^[[:s:]]*(ENDLOOP)");
+	//regex keywords_startloop("^\\s*(STARTLOOP)");
+	//regex keywords_endloop("^\\s*(ENDLOOP)");
+	regex keywords_startloop("^\\s*(STARTLOOP)");
+	regex keywords_endloop("^\\s*(ENDLOOP)");
 	smatch match;
 	ToUpper(temp);
 	bool found_startloop = regex_search(temp, match, keywords_startloop);
@@ -1148,7 +1224,7 @@ void Initialize(){
 	if (directoryDebug.size() == 0) {
 		directoryDebug = "debug_files\\";
 	}
-	if (G_DEBUG_ON)
+	//if (G_DEBUG_ON)
 	debugfile.open(directoryDebug+"debug.txt");
 	errlogfile.open (directoryDebug+"error_logs.txt");
 	warnlogfile.open (directoryDebug+"warning_logs.txt");
@@ -1205,17 +1281,32 @@ void WriteVecPatterns(){
 
 	int i=0;
 	int xpos = 0, ypos = 0;
-	unsigned char a = 177, b = 219;
-
+	unsigned char a = 0xB1, b = 0xDB;
+	int pbarCol = 0;
+	int pbarRow = 17;
+	int barIndex;
+	rowSize = rowSize - 2;
 	if (HEADER_GRAPHIC) {
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 20);
+		 setTextColor(20);
 		setCursorPosition(5, 17);
-		for (size_t i = 0; i < vsEXECPATNAMES.size(); i++)
+		for (size_t i = 0; i < vsEXECPATNAMES.size(); i++) {
+			barIndex = i;
+			if ((barIndex == 75) || (barIndex == 150) || (barIndex == 225) || (barIndex == 300)  || (barIndex == 375)  || (barIndex == 450)) {
+				pbarCol = pbarCol - 75;
+				pbarRow = pbarRow + 1;
+			}
+
+			setCursorPosition(5 + i + pbarCol, pbarRow + rowSize);
 			cout << a;
+		}
 		setCursorPosition(XPosLast, YPosLast);
 	}
 
+	pbarCol = 0;
+	pbarRow = 17;
+	barIndex;
 	for(size_t  c = 0; c < vsEXECPATNAMES.size(); c++){
+		barIndex = c;
 		for (  vector<Pattern>::iterator it = vvsPATTERNS.begin(); it != vvsPATTERNS.end(); ++it,++i){
 				//cout << i << ":" << *it << '\n';
 			string name =  trim(it->name);
@@ -1226,7 +1317,11 @@ void WriteVecPatterns(){
 				if (HEADER_GRAPHIC) {
 					xpos, ypos = currentCurPos();
 					//cout << xpos <<  " : " << ypos << endl;
-					setCursorPosition(5 + c, 17);
+					if ((barIndex == 75) || (barIndex == 150) || (barIndex == 225) || (barIndex == 300)  || (barIndex == 375)  || (barIndex == 450)) {
+						pbarCol = pbarCol - 75;
+						pbarRow = pbarRow + 1;
+					}
+					setCursorPosition(5 + c + pbarCol, pbarRow + rowSize);
 					cout << b;
 					setCursorPosition(xpos, ypos);
 					//cout << xpos << " : " << ypos << endl;
@@ -1235,6 +1330,7 @@ void WriteVecPatterns(){
 			}
 		}                              
 	}
+
 }
 
 int FindFromPatterns(string pat_name){
@@ -1254,22 +1350,38 @@ void ConvertPatterns(){
 	
 	int i=0;
 	int xpos=0, ypos=0;
-	unsigned char a = 177 ,b = 219;
+	unsigned char a = 0xB1 ,b = 0xDB;
 
 	if (HEADER_GRAPHIC) {
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
-		setCursorPosition(5, 14);
-		for (size_t i = 0; i < vsEXECPATNAMES.size(); i++)
+		int barIndex = 0;
+		int pbarRow = 14;
+		int pbarCol = 0;
+
+		 setTextColor(10);
+		setCursorPosition(5, pbarRow);
+		for (size_t i = 0; i < vsEXECPATNAMES.size(); i++) {
+			barIndex = i;
+			if ((barIndex == 75) || (barIndex == 150) || (barIndex == 225) || (barIndex == 300)  || (barIndex == 375)  || (barIndex == 450)) {
+				pbarCol = pbarCol - 75;
+				pbarRow = pbarRow + 1;
+			}
+
+			setCursorPosition(5 + i + pbarCol, pbarRow);
 			cout << a;
-		setCursorPosition(0, 23);
+			//setCursorPosition(5, pbarRow);
+		}
+		setCursorPosition(0, (23+ rowSize*2)-4);
 	}
 
 	if(G_MODE ==  MODE1)
 	vvsPATTERNS.back().LoadPatInits("_global_");
-
+	int barIndex = 0;
+	int pbarRow = 14;
+	int pbarCol = 0;
 	for(size_t  c = 0; c < vsEXECPATNAMES.size(); c++){
-		for (  vector<Pattern>::iterator it = vvsPATTERNS.begin(); it != vvsPATTERNS.end(); ++it,++i){
+		barIndex = c;
 
+		for (  vector<Pattern>::iterator it = vvsPATTERNS.begin(); it != vvsPATTERNS.end(); ++it,++i){
 			string name =  trim(it->name);
 
 			if( vsEXECPATNAMES.at(c).compare(name) == 0 ){
@@ -1279,9 +1391,13 @@ void ConvertPatterns(){
 				//it->printdata(outfile);
 				if (HEADER_GRAPHIC) {
 					xpos, ypos = currentCurPos();
-					
+					if ((barIndex == 75) || (barIndex == 150) || (barIndex == 225) || (barIndex == 300)  || (barIndex == 375)  || (barIndex == 450)) {
+						pbarCol = pbarCol - 75;
+						pbarRow = pbarRow + 1;
+					}
+
 					//cout << xpos <<  " : " << ypos << endl;
-					setCursorPosition(5 + c, 14);
+					setCursorPosition(5 + c  +pbarCol, pbarRow);
 					cout << b;
 					setCursorPosition(xpos, ypos);
 					//cout << xpos << " : " << ypos << endl;
@@ -1290,6 +1406,7 @@ void ConvertPatterns(){
 			}
 		} 
 	}
+
 	XPosLast = xpos;
 	YPosLast = ypos;
 }
@@ -1367,7 +1484,7 @@ time_t cvt_time(char const *time) {
     char s_month[5];
     int month, day, year;
     struct tm t = {0};
-    static const char month_names[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
+    static const char month_names[] = "JanuaryFebuaryMarchAprilMayJuneJulyAugustSeptemberOctoberNovemberDecember";
 
 #pragma warning( disable : 4996 )
     sscanf(time, "%s %d %d", s_month, &day, &year);
@@ -1388,8 +1505,8 @@ string filterMicroInst(string type, string uInst) {
 	string strTest = " VEC  (1:XXXX XXXX  0XX0X  XXX)";
 	string Space = " ";
 	strTest = RemoveChar(strTest, Space);
-	//regex vecMultiSite_keywords("(^[[:s:]]*%*[[:s:]]*VEC[[:s:]]*)(\\([[:s:]]*[[:d:]]+[[:s:]]*:)([[:s:]]*[[:w:]]*[[:s:]]*[[:w:]]*[[:s:]]*)(\\)[[:s:]]*,*)([[:s:]]*[[:w:]]*.*)", std::regex_constants::icase);
-	regex vec_rpt_MultiSite_keywords("(^[[:s:]]*%*[[:s:]]*(VEC[[:s:]]*|RPT[[:s:]]*[[:d:]]+)[[:s:]]*)(\\([[:s:]]*[[:d:]]+[[:s:]]*:)(.*)(\\)[[:s:]]*,*)([[:s:]]*[[:w:]]*.*)", std::regex_constants::icase);
+	//regex vecMultiSite_keywords("(^\\s*%*\\s*VEC\\s*)(\\(\\s*\\d+\\s*:)(\\s*\\w*\\s*\\w*\\s*)(\\)\\s*,*)(\\s*\\w*.*)", std::regex_constants::icase);
+	regex vec_rpt_MultiSite_keywords("(^\\s*%*\\s*(VEC\\s*|RPT\\s*\\d+)\\s*)(\\(\\s*\\d+\\s*:)(.*)(\\)\\s*,*)(\\s*\\w*.*)", std::regex_constants::icase);
 	foundvecMultiSite = regex_search(uInst, match15, vec_rpt_MultiSite_keywords);
 	string uInstFiltered;
 
@@ -1405,102 +1522,123 @@ string filterMicroInst(string type, string uInst) {
 	return uInst;
 }
 
-void buildHeader() {
+void buildHeader(string section, int rSize) {
+	if (!HEADER_GRAPHIC) { return; }
 	if (MAX_WINDOW) { MoveWindow(hWnd, NewWidth, NewHeight, WindowWidth, WindowHeight, TRUE); }
 	setCursorPosition(0, 0);
 	LONG style = GetWindowLong(hWnd, GWL_STYLE);
 	style = style & ~(WS_MAXIMIZEBOX);
 	SetWindowLong(hWnd, GWL_STYLE, style);
-
+	rowSize = rSize;
 	const time_t ONE_DAY = 24 * 60 * 60;
 	const char *buildDate = __DATE__;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
-	TitleBox("TOP");
-	TitleBox("SIDE2");
-	TitleBox("SIDE1");
-	cout << "\n";
+	const char *buildTime = __TIME__;
+	if (section == "TOP") {
+		 setTextColor(31);
+		TitleBox("TOP");
+		TitleBox("SIDE2");
+		TitleBox("SIDE1");
+		cout << "\n";
 
-	TitleBox("DIVIDER");
-	TitleBox("SIDE2");
-	TitleBox("SIDE1");
-	cout << "\n";
+		TitleBox("DIVIDER");
+		TitleBox("SIDE2");
+		TitleBox("SIDE1");
+		cout << "\n";
 
-	TitleBox("SIDE2");
-	TitleBox("SIDE1");
-	cout << "\n";
+		TitleBox("SIDE2");
+		TitleBox("SIDE1");
+		cout << "\n";
 
-	TitleBox("BOTTOM");
-	setCursorPosition(2, 1);
-	cout << "\t\t\tAPG Tool Build Date: " << buildDate << endl;
+		TitleBox("BOTTOM");
+		setCursorPosition(2, 1);
+		cout << "\t\t\tAPG Tool Build Date: " << buildDate << " at " << buildTime << endl;
 
-	setCursorPosition(0, 6);
+		setCursorPosition(0, 6);
+		//PreParse Check 
+		 setTextColor(30);
+		//system("color 0e");
+		unsigned char a = 0xB1, b = 0xDB, c = 0xB9;
+		TitleBox("TOP");
+		TitleBox("SIDE2");
+		cout << "\r";
+		TitleBox("SIDE1");
+		cout << "\n";
 
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 30);
-	//system("color 0e");
-	unsigned char a = 177, b = 219, c = 185;
-	TitleBox("TOP");
-	TitleBox("SIDE2");
-	cout << "\r";
-	TitleBox("SIDE1");
-	cout << "\n";
+		TitleBox("SIDE2");
+		TitleBox("SIDE1");
+		cout << "\n";
 
-	TitleBox("SIDE2");
-	TitleBox("SIDE1");
-	cout << "\n";
+		TitleBox("DIVIDER");
+		 setTextColor(27);
+		//Parse Patterns 
+		TitleBox("SIDE2");
+		cout << "\r";
+		TitleBox("SIDE1");
+		cout << "\n";
 
-	TitleBox("DIVIDER");
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 27);
+		TitleBox("SIDE2");
+		cout << "\r";
+		TitleBox("SIDE1");
+		cout << "\n";
 
-	TitleBox("SIDE2");
-	cout << "\r";
-	TitleBox("SIDE1");
-	cout << "\n";
+		TitleBox("BOTTOM");
+	}
+	//Converting Patterns 
+	if (section == "BOTTOM") {
+		int numPats = vsEXECPATNAMES.size();
+		int remainder = numPats % 75;
+		rowSize = 1 + (numPats / 75);
+		if (remainder > 0) { rowSize = rowSize + 1; }
 
-	TitleBox("SIDE2");
-	cout << "\r";
-	TitleBox("SIDE1");
-	cout << "\n";
+		setCursorPosition(0, 12);
+		TitleBox("DIVIDER");
 
-	TitleBox("DIVIDER");
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
+		 setTextColor(26);
 
-	TitleBox("SIDE2");
-	cout << "\r";
-	TitleBox("SIDE1");
-	cout << "\n";
+		for (size_t rSize = 0; rSize < rowSize; rSize++) {
+			TitleBox("SIDE2");
+			cout << "\r";
+			TitleBox("SIDE1");
+			cout << "\n";
+		}
 
-	TitleBox("SIDE2");
-	cout << "\r";
-	TitleBox("SIDE1");
-	cout << "\n";
+		TitleBox("DIVIDER");
+		 setTextColor(20);
 
-	TitleBox("DIVIDER");
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 20);
+		for (size_t rSize = 0; rSize < rowSize; rSize++) {
+			TitleBox("SIDE2");
+			cout << "\r";
+			TitleBox("SIDE1");
+			cout << "\n";
+		}
 
-	TitleBox("SIDE2");
-	cout << "\r";
-	TitleBox("SIDE1");
-	cout << "\n";
+		TitleBox("BOTTOM");
+		int curXPosLast=0;
+		int curYPosLast=0;
+		 curXPosLast,  curYPosLast = currentCurPos();
 
-	TitleBox("SIDE2");
-	cout << "\r";
-	TitleBox("SIDE1");
-	cout << "\n";
+		//cout << "\n";
+		setCursorPosition(63, curYPosLast -1);
+		TitleBox("DIVIDER2");
+		setCursorPosition(62, curYPosLast);
+		TitleBox("SIDE1B");
+		setCursorPosition(62, curYPosLast +1);
+		TitleBox("SMALLBOTTOM");
+		setCursorPosition(64, curYPosLast);
+		 setTextColor(31);
+		cout << " Program Rev: " << REVISION << endl;
+		cout << "\n\n";
+		 setTextColor(10);
 
-	TitleBox("BOTTOM");
+		 setTextColor(31);
+		setCursorPosition(5, 13);
+		cout << "Converting Pattern(s)" << endl;
 
-	//cout << "\n";
-	setCursorPosition(63, 18);
-	TitleBox("DIVIDER2");
-	setCursorPosition(62, 19);
-	TitleBox("SIDE1B");
-	setCursorPosition(62, 20);
-	TitleBox("SMALLBOTTOM");
-	setCursorPosition(64, 19);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
-	cout << " Program Rev: " << REVISION << endl;
-	cout << "\n\n";
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		 setTextColor(31);
+		setCursorPosition(5, 16 + (rowSize-2));
+		cout << "Writing Pattern(s)" << endl;
+		 setTextColor(27);
+	}
 }
 
 void ShowConsoleCursor(bool showFlag)
@@ -1559,15 +1697,7 @@ int main(int argc, char* argv[])
 {
 const time_t ONE_DAY = 24 * 60 * 60 ;
 const char *buildDate = __DATE__ ;
-if(HEADER_GRAPHIC){
-	buildHeader();
 
-LPCSTR lpcMessage2;
-string tempREVISION = "  APG Tool " + REVISION;
-lpcMessage2 = tempREVISION.c_str();
-SetConsoleTitle(lpcMessage2);
-ShowConsoleCursor(false);
-}
 int start = clock();
 
 
@@ -1575,11 +1705,11 @@ int start = clock();
 //############################################################
 //Regex Experiment
 //############################################################
-	//regex keywords("([tyarnold1]+)@([[:w:]]+)\.com");
-	// \w => [[:w:]]  \s => [[:s:]] \d => [[:d:]] 
-	//regex keywords("^[[:s:]]*(STARTLOOP)");
-	//regex keywords("(mar)+[[:s:]]*(gosub)+[[:s:]]*,+[[:s:]]*([[:w:]]+)[[:s:]]*,*[[:s:]]*([[:w:]]*)");
-	//regex keywords("%+[[:s:]]*([[:w:]]+)[[:s:]]*:+");
+	//regex keywords("([tyarnold1]+)@(\\w+)\.com");
+	// \w => \\w  \s => \\s \d => \\d 
+	//regex keywords("^\\s*(STARTLOOP)");
+	//regex keywords("(mar)+\\s*(gosub)+\\s*,+\\s*(\\w+)\\s*,*\\s*(\\w*)");
+	//regex keywords("%+\\s*(\\w+)\\s*:+");
 	//smatch match;
 	//ToUpper(input);
 	//bool found = regex_search(input, match, keywords);
@@ -1622,14 +1752,22 @@ for (int a = 0; a < argc; a++) {
 		G_DEBUG_ON = true;
 	else if (arg.compare("/verbose") == 0)
 		G_VERBOSE = true;
-	else if (arg.compare("/usage") == 0)
+	else if (arg.compare("/usage") == 0) {
 		G_USAGE = true;
+		HEADER_GRAPHIC = false;
+	}
 	else if (arg.compare("/gui") == 0)
 		G_GUI = true;
 	else if (arg.compare("/alu_warn") == 0)
 		G_WARN_ALU = true;
 	else if (arg.compare("/alu_on") == 0)
 		G_ALU_ON = true;
+	else if (arg.compare("/chg_log") == 0) {
+		G_CHANGELOG = true;
+		HEADER_GRAPHIC = false;
+	}
+	else if (arg.compare("/grph_off") == 0)
+		HEADER_GRAPHIC = false;
 	else if (arg.compare("/dirin") == 0) {
 		directory = RemoveChar(argv[a + 1], " \r\n");
 		if (!dirExists(directory)) {
@@ -1698,9 +1836,18 @@ for (int a = 0; a < argc; a++) {
 		//cout << "Debug directory: " << argv[a + 1] << "\n";
 	}
 }
+if (HEADER_GRAPHIC) {
+	buildHeader("TOP", 1);
+
+	LPCSTR lpcMessage2;
+	string tempREVISION = "  APG Tool " + REVISION;
+	lpcMessage2 = tempREVISION.c_str();
+	SetConsoleTitle(lpcMessage2);
+	ShowConsoleCursor(false);
+}
 if (G_USAGE) {
 		if (HEADER_GRAPHIC) {
-		setCursorPosition(0, 23);
+		setCursorPosition(0, 22);
 	}
 
 	cout << "  =============================================================================" << "\n";
@@ -1718,16 +1865,27 @@ if (G_USAGE) {
 	cout << "  APG_TOOL_VX.X " << "/debug_on" << "\n\n";
 	cout << "  Example usage 6: Select input files directory " << "\n";
 	cout << "  APG_TOOL_VX.X " << "/dirin my_input_files" << "\n\n";
-	cout << "  Example usage 7: Select and/or create if not exists output files directory " << "\n";
+	cout << "  Example usage 7: Select and/or create output files directory " << "\n";
 	cout << "  APG_TOOL_VX.X " << "/dirout my_output_files" << "\n\n";
-	cout << "  Example usage 8: Select and/or create if not exists debug files directory " << "\n";
+	cout << "  Example usage 8: Select and/or create debug files directory.\n";
+	cout << "  Create default dirctory debug_files to collect debug data. " << "\n";
 	cout << "  APG_TOOL_VX.X " << "/dirdebug my_debug_files" << "\n\n";
 	cout << "  Example usage 9: Create per_pat_inits.txt file " << "\n";
 	cout << "  APG_TOOL_VX.X " << "/req" << "\n\n";
-	cout << "  Example usage 10: Warning for X/Y ALU instructions encountred. " << "\n";
+	cout << "  Example usage 10: Warning for X/Y ALU unsupported instructions. " << "\n";
 	cout << "  APG_TOOL_VX.X " << "/alu_warn" << "\n\n";
-	cout << "  Example usage 11: Turn X/Y ALU processing On. " << "\n";
-	cout << "  APG_TOOL_VX.X " << "/alu_on" << "\n\n";
+	cout << "  Example usage 12: Turn Header Graphics Off. " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/grph_off" << "\n\n";
+	cout << "  Example usage 13: Show Change Log. " << "\n";
+	cout << "  APG_TOOL_VX.X " << "/chg_log" << "\n\n";
+	_getch();
+	return 0;
+}
+if (G_CHANGELOG) {
+	if (HEADER_GRAPHIC) {
+		setCursorPosition(0, 22);
+	}
+	changeLog();
 	_getch();
 	return 0;
 }
@@ -1739,10 +1897,13 @@ if(!Custom_Input){
 	}
 	if (HEADER_GRAPHIC) {
 		setCursorPosition(2, 3);
+	 setTextColor(26);
 	}
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
 	cout << "   Input Directory:  ";
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
+
+	if (HEADER_GRAPHIC) {
+		 setTextColor(31);
+	}
 	cout << directory;
 
 	directory = directory + "\\";
@@ -1756,10 +1917,13 @@ if (!Custom_Output) {
 	}
 	if (HEADER_GRAPHIC) {
 		setCursorPosition(2, 4);
+	 setTextColor(26);
 	}
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
 	cout << "   Output Directory: ";
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
+	if (HEADER_GRAPHIC) {
+
+		 setTextColor(31);
+	}
 	cout << directoryOut;
 	directoryOut = directoryOut + "\\";
 }
@@ -1776,9 +1940,9 @@ if ((Custom_DebugOutput)) {
 	}
 	string tempDir = directoryDebug;
 	tempDir.erase(tempDir.end() - 1);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 26);
+	 setTextColor(26);
 	cout << "Debug Directory: ";
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 31);
+	 setTextColor(31);
 	cout << tempDir << "\n";
 	directoryDebug = directoryDebug + "\\";
 }
@@ -1815,9 +1979,9 @@ if (HEADER_GRAPHIC) {
 Initialize();
 
 if(G_PINSCRAMBLE_NAME.length() < 1 ){
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+	 setTextColor(12);
 	LogError("Variable ","pin_scramble not specified in config.txt");
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	 setTextColor(10);
 	if (G_HALT_E)
 	_getch();
 	return -1;
@@ -1830,7 +1994,7 @@ if (HEADER_GRAPHIC) {
 else {
 	cout << "\n";
 }
-
+buildHeader("BOTTOM", 4);
 ConvertPatterns();
 
 if (G_MODE == MODE1) {
@@ -1854,16 +2018,16 @@ if (Loop_Violation) { // Added for Nested Loop Violation. - TAZ 06/07/2018
 	message = "Encountered a nested loop violation for pattern(s): "+ temp_str +".";
 	lpcMessage = message.c_str();
 	int msgboxID = MessageBox(NULL, lpcMessage, "", MB_ICONWARNING | MB_OK);
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+	 setTextColor(12);
 	cout << "  Encountered a nested loop violation for pattern(s): " << temp_str << "."<< endl;
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+	 setTextColor(10);
 }
 
 if (G_WARN_CNT > 0) {
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2);
+	 setTextColor(2);
 	cout << "  " << G_WARN_CNT << " warning(s). See /" + directoryDebug + "warning_logs.txt." << endl;
 }
-SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+ setTextColor(10);
 cout << "  Done. Press any key to quit..." <<endl;
 ShowConsoleCursor(true);
 

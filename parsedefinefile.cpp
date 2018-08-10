@@ -43,9 +43,9 @@ int ParseDefineFile(string dirout,string filename){
 		  setCursorPosition(XPosLast, YPosLast);
 
 		setCursorPosition(5, 22);
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+		 setTextColor(12);
 		LogError("ParseDefineFile", "Cannot open input file - " + filename);
-		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		 setTextColor(10);
 		_getch();
 		return 0;
 	  }

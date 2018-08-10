@@ -1367,7 +1367,9 @@ for(size_t c = 0; c < params.size(); c++)
 			getCurPatInst()->isADHIZ = true;
 		else if(idx == VPULSE){
 			getCurPatInst()->isVPULSE = true;
-
+				}
+		else if (idx == VTSET) {
+			getCurPatInst()->isVTSET = true;
 			}
 		}
 	}
@@ -1607,9 +1609,9 @@ for(size_t c = 0; c < params.size(); c++)
 					Log(param, toString(G_UDATA));
 				}
 				else{
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+					 setTextColor(12);
 					LogError("f_Udata","Failed to convert " + param + " to long.");
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+					 setTextColor(10);
 					if (G_HALT_E) {
 						cout << "Hit any key to continue" << endl;
 						_getch();
@@ -1623,9 +1625,9 @@ for(size_t c = 0; c < params.size(); c++)
 					Log(param, toString(val));
 				}
 				else{
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+					 setTextColor(12);
 					LogError("f_Udata","Failed to convert " + param + " to long.");
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+					 setTextColor(10);
 					if (G_HALT_E) {
 						cout << "Hit any key to continue" << endl;
 						_getch();
@@ -1748,6 +1750,12 @@ for(size_t c = 0; c < params.size(); c++)
 			if (FindFromTable(PINFUNC_OP_2_table, params.at(c), idx)) {
 				/*G_VIHH_SEL*/ m_VihhSel = PINFUNC_OP_2_table[idx];
 			}
+			if (getCurPatInst()->isVTSET == true) {
+				if (FindFromTable(PINFUNC_OP_3_table, params.at(c), idx)) {
+					/*G_TSET_SEL*/ m_TsetSel = PINFUNC_OP_3_table[idx];
+				}
+			}
+
 		}break;
 	}// switch
 } // for
@@ -1793,6 +1801,7 @@ void Pattern::f_Rpt(vector<string> &params,string vecdef){
 
 string str_cnt;
 string final_bits;
+int idx;
 
 if (params.size() == 0) { return; } // TAZ for no RPT statement/parameter.
 vector<string> vecdef_str = Tokenize(vecdef, ' ');
@@ -1831,7 +1840,7 @@ for(size_t c = 0; c < params.size(); c++)
 				m_Prefix =  "RPT";
 				m_rpt_cnt = "";
 				vector<string> rpt_cmd;
-				regex keywords("([[:d:]]+)[[:s:]]+([[:w:]]*[[:s:]]*){100}");
+				regex keywords("(\\d+)\\s+(\\w*\\s*){100}");
 				smatch match;
 				bool found = regex_search(params.at(c), match, keywords);
 
@@ -1893,6 +1902,16 @@ for(size_t c = 0; c < params.size(); c++)
 				}
 			}
 		}break;
+		case 1: {
+			if (getCurPatInst()->isVTSET == true) {
+				if (FindFromTable(PINFUNC_OP_3_table, params.at(c), idx)) {
+					/*G_TSET_SEL*/ m_TsetSel = PINFUNC_OP_3_table[idx];
+				}
+			}
+
+		}break;
+
+
 	}// switch
 } // for
 
@@ -1954,7 +1973,7 @@ ToUpper(s_apg_inst);
 int retval;
 
 if( !FindFromTable(APG_INST_table, s_apg_inst, retval)){
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+	 setTextColor(12);
 	LogError("ExecuteMicroInst", s_apg_inst + "not found");
 	return -1;
 }
@@ -2104,7 +2123,7 @@ int retval;
 vector<string> temp_params;
 
 if( !FindFromTable(APG_INST_table, s_apg_inst, retval)){
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+	 setTextColor(12);
 	LogError("ExecuteMicroInst", s_apg_inst + "not found");
 	return -1;
 }
@@ -2302,7 +2321,7 @@ int Pattern::JumpToGosubFix(PatInst &inst) {
 	int pos;
 	int pos2;
 	string name = currentPattern;
-	regex JumpGosub_keywords("^[[:s:]]*%*mar[[:s:]]*jump[[:s:]]*,[[:s:]]*([[:w:]]+)", std::regex_constants::icase);
+	regex JumpGosub_keywords("^\\s*%*mar\\s*jump\\s*,\\s*(\\w+)", std::regex_constants::icase);
 	smatch match9;
 
 	for (size_t j = 0; j < inst.m_listMicroInst->size(); j++) {  // for each micro instruction
@@ -2320,9 +2339,9 @@ int Pattern::JumpToGosubFix(PatInst &inst) {
 					for (map<string, string>::iterator iter2 = tempMap3.begin(); iter2 != tempMap3.end(); ++iter2) {
 						pos2 = tempMatch.find(iter2->first);
 						if (pos2 != -1) {
-							SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 2);
+							 setTextColor(2);
 							cout  << "  Changing jump to gosub for pattern " << iter->first  << " and label " << iter2->first << endl;
-							SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+							 setTextColor(10);
 							mi.replace(pos, 4, "gosub");
 							inst.m_listMicroInst->at(j).assign(mi);
 					}
@@ -2898,9 +2917,9 @@ bool SetIntReg(unsigned int &tgt_reg, string &reg_name, string &str_val){
 				return true;
 			}
 			else{
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+				 setTextColor(12);
 				LogError("LoadPatInits - load " + reg_name,"failed to convert " + str_val +" to long.");
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+				 setTextColor(10);
 				if (G_HALT_E) {
 					cout << "Hit any key to continue" << endl;
 					_getch();
@@ -2921,9 +2940,9 @@ bool SetReg(unsigned long &tgt_reg, string &reg_name, string &str_val){
 				return true;
 			}
 			else{
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+				 setTextColor(12);
 				LogError("LoadPatInits - load " + reg_name,"failed to convert " + str_val +" to long.");
-				SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+				 setTextColor(10);
 				if (G_HALT_E) {
 					cout << "Hit any key to continue" << endl;
 					_getch();
@@ -3008,9 +3027,9 @@ if( iter == stdmapPATINITS.end() ){ // if found
 							m_GlobalInitMap[reg] = str_val;
 					}
 					else{
-						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+						 setTextColor(12);
 						LogError("LoadPatInits - load counter","failed to convert " + trim(pair.at(1)) +" to long.");
-						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+						 setTextColor(10);
 						if (G_HALT_E) {
 							cout << "Hit any key to continue" << endl;
 							_getch();
@@ -3018,9 +3037,9 @@ if( iter == stdmapPATINITS.end() ){ // if found
 					}
 				}
 				else{
-					    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+					     setTextColor(12);
 						LogError("LoadPatInits", "Invalid counter number : " + toString(ctr));
-						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+						 setTextColor(10);
 						if (G_HALT_E) {
 							cout << "Hit any key to continue" << endl;
 							_getch();
@@ -3128,9 +3147,9 @@ if( iter == stdmapPATINITS.end() ){ // if found
 					//	_getch();
 					}
 					else{
-						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+						 setTextColor(12);
 						LogError("LoadPatInits", "Invalid t_cs number : " + toString(cs_num));
-						SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+						 setTextColor(10);
 						if (G_HALT_E) {
 							cout << "Hit any key to continue" << endl;
 							_getch();
@@ -3139,9 +3158,9 @@ if( iter == stdmapPATINITS.end() ){ // if found
 
 				}
 				else{
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+					 setTextColor(12);
 					LogError("LoadPatInits", "Invalid tester function : " + t_cs);
-					SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+					 setTextColor(10);
 					if (G_HALT_E) {
 						cout << "Hit any key to continue" << endl;
 						_getch();
@@ -3151,9 +3170,9 @@ if( iter == stdmapPATINITS.end() ){ // if found
 		}
 		else
 		{
-		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 12);
+		  setTextColor(12);
 		 LogError("LoadPatInits", reg + " - unknown register or function.");
-		 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), 10);
+		  setTextColor(10);
 		 if (G_HALT_E) {
 			 cout << "Hit any key to continue" << endl;
 			 _getch();

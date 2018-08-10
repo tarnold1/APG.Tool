@@ -20,6 +20,7 @@ public:
 	bool isReadUdata;
 	bool isADHIZ;
 	bool isVPULSE;
+	bool isVTSET;
 	bool isInLoop;
 	bool isHoldYalu;
 	bool isHoldXalu;

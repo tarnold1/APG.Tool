@@ -1,0 +1,53 @@
+APG Tool Updates
+===============================================================
+
+08/14/2017
+-Initial Release
+===============================================================
+11/03/17
+Added a  write once logic for Select 0.
+===============================================================
+12/14/17 Version 2.1
+-Added -  Duplicate pattern names Dialog Message with program exit.
+-Fixed - VEC/RPT repeating count.
+-Fixed  - RPT Processing puts the operand on the next VEC instruction
+-Fixed - mar readudata H/L  issue
+-Fixed-  mar read and adhiz issue 
+-Fixed-  vecdef continuation character '/' issue
+-Added - VIHH2 for VEC w/ RST_12V microinstruction
+===============================================================
+1/17/18
+-Fix adhiz strobe  bug.
+-Added multi vecdef capability.
+-Added directory selection capability for input and output directories.
+-Fix regression for  jam and data registers loads.
+===============================================================
+6/08/18
+-Added DBM memory uses register BUFBUF. 
+-Fixed Loop jumps within a loop is  Illegal. 
+-Fixed Start Loop issue comments out.    
+-Fixed Pin name in scramble is a Macro definition.   
+-Added The cmpldr instruction complements datareg data. Inverted data required.  
+-Fixed Counter reload is not supported properly.   
+===============================================================
+7/11/18
+Phase II
+-Added Implement cntupdr and cntdndr micro instruction.  Done
+- Fixed Create PerPatInits file creation.   Done
+ Usage : APG_TOOL_VX.X /req
+-Fixed No original code in output file. Puts comments in with '//'.   Done
+Original code removed only comments remain.
+ Usage : APG_TOOL_VX.X /no_orig_code
+-Fixed The comments /* and */ block comments issue.   
+ Comments are removed.
+-Fixed Gosub when target is a label.   Done
+  Parsed label micro to mar done to create an optional new pattern.
+===============================================================  
+7/25/18
+-Added options for X/Y ALU ON/OFF and ALU Warnings ON/OFF. 
+=============================================================== 
+8/1/18 
+-Added X/Y ALU operations below for multi SourceA/B combinations for checkout.
+ X/Y ALU options processed : INCREMENT, DECREMENT, DOUBLE, COMP, NAND, NOR, AND, OR, XOR, ADD, and SUBTRACT
+ 8/6/18 
+-Added Pinfunc VTSET instruction which selects the VAR Engine as the source of the time-set.
