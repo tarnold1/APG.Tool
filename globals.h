@@ -87,6 +87,9 @@ extern string directory;
 extern int XPosLast;
 extern int YPosLast;
 
+extern string sourceRegName;
+extern long sourceRegValue;
+
 
 //#define _debug_on_
 

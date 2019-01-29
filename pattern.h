@@ -38,6 +38,7 @@ private:
 	bool m_isCount;
 	string m_currentPat;
 
+
 public:
 	string m_SubVecDef;
 	bool m_isSubPat;

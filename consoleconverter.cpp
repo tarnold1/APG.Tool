@@ -86,6 +86,8 @@ unsigned long G_DBM;
 unsigned long G_XADDR;
 unsigned long G_YADDR;
 unsigned long G_YMAIN,G_YBASE,G_YFIELD,G_XMAIN,G_XBASE,G_XFIELD,G_NUMX,G_NUMY;
+string sourceRegName;
+long sourceRegValue;
 
 bool 
 G_CS_ACTIVE_H[8] = {false, false, false, false, false, false, false, false};
@@ -146,7 +148,7 @@ int NewHeight = ((Height - WindowHeight) / 2);		//--- Used as a parameter to cen
 													//Getting the console window handle
 HWND hWnd = GetConsoleWindow();
 
-string REVISION = "3.04";
+string REVISION = "3.05";
 
 //Declaring the function
 #pragma warning( disable : 4273 )
@@ -223,7 +225,10 @@ void changeLog() {
 		the time set.
 	-Added option to turn off header and progress bar graphics for unsupported terminals
 	-Added Change Log viewing option.
-		)";
+	_______________________________________________________________________________
+	1/24/19
+	-Added shldr and shrdr instruction which shifts the contents of the datreg. 
+	)";
 	cout << changeLogMessage << endl;
 }
 
@@ -900,6 +905,8 @@ void ParsePatInits(string directory){
 
 void TitleBox(string type) {
 	if (!HEADER_GRAPHIC) { return; }
+	//SetConsoleOutputCP(437);
+
 	unsigned char d = 0xBB;
 	unsigned char e = 0xBC;
 	unsigned char f = 0xC8;
@@ -1196,10 +1203,10 @@ void NestLoopCheck(string temp, string patName) {
 	// ******** Added for Nested Loop Violation. - TAZ 06/07/2018 *************
 	//regex keywords_startloop("^\\s*(STARTLOOP)");
 	//regex keywords_endloop("^\\s*(ENDLOOP)");
-	regex keywords_startloop("^\\s*(STARTLOOP)");
-	regex keywords_endloop("^\\s*(ENDLOOP)");
+	regex keywords_startloop("^\\s*(STARTLOOP)", std::regex_constants::icase);
+	regex keywords_endloop("^\\s*(ENDLOOP)",std::regex_constants::icase);
 	smatch match;
-	ToUpper(temp);
+	//ToUpper(temp);
 	bool found_startloop = regex_search(temp, match, keywords_startloop);
 	bool found_endloop = regex_search(temp, match, keywords_endloop);
 

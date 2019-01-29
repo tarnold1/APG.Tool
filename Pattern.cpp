@@ -54,6 +54,7 @@ Pattern::Pattern(){
 	type = "";
 	m_isCount = false;
 	m_currentPat = "";
+
 };
 Pattern::~Pattern(){};
 
@@ -980,6 +981,7 @@ for(int i = 0; i <= 15; i++){
 void Pattern::f_DatGen(vector<string> &params){
 
 long source;
+
 bool inv = false;
 bool isProtected = false;
 bool update = false;
@@ -999,18 +1001,25 @@ for(size_t c = 0; c < params.size(); c++){
 	#ifdef _debug_on_
 	Log("f_DatGen", "\tparam : " + params.at(c) ); //
 	#endif
+
 	string p = params.at(c);
 	int idx;
 	if( FindFromTable( DATGEN_OPS_table, p, idx) ){ // do not convert to upper when searching
-	 
+		if (G_DATREG == 615048) {
+			int donothing = 0;
+		}
 		switch(idx){
 		case DATDAT:{
 			source = G_DATREG;
 			update = true; 
+			sourceRegValue = G_DATREG;
+			sourceRegName = "DATDAT";
 				}break;
 		case JAMJAM:{
 			source = G_JAMREG;
 			update = true; 
+			sourceRegValue = G_JAMREG;
+			sourceRegName = "JAMJAM";
 			//Log("Load from jamreg", toString(source));
 			 //_getch();
 					}break;
@@ -1051,6 +1060,17 @@ for(size_t c = 0; c < params.size(); c++){
 				G_DATREG = G_DATREG + 1;
 			}
 		}break;
+		case SHLDR: {
+			source = sourceRegValue << 1; // Added for datreg shift - TAZ 01/24/2019
+			if (sourceRegName == "DATDAT") { G_DATREG = source; }
+			if (sourceRegName == "JAMJAM") { G_JAMREG = source; }
+		}break;
+		case SHRDR: {
+			source = sourceRegValue >> 1; // Added for datreg shift - TAZ 01/24/2019
+			if (sourceRegName == "DATDAT") { G_DATREG = source; }
+			if (sourceRegName == "JAMJAM") { G_JAMREG = source; }
+
+		}break; {}
 		case EQFDIS :  {}
 		case XYEQB :  {}
 		case YEQB :  {}
